@@ -263,6 +263,9 @@ describe Conductor::Base, "when the resource has error, and one of the records i
   end
   
   it "should aggregate all the errors from the resource and the records in the updaters" do
+    @resource.expects(:valid?)
+    @updater.records.each { |rec| rec.expects(:valid?) }
+    
     errors = @conductor.errors.full_messages
     errors.length.should == 2
     errors.should include("Foo is totally wrong!")

@@ -129,9 +129,11 @@ module Conductor
     # add their errors to the base errors object
     def errors
       unless @errors
+        resource.valid?
         @errors = resource.errors.dup
         updaters.each do |updater|
           updater.records.each do |record|
+            record.valid?
             record.errors.each_full do |message|
               @errors.add_to_base message
             end
