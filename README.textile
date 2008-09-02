@@ -22,7 +22,7 @@ h2. The Basics
 
 At the most basic level, you create a specific conductor class, which sub-classes @Conductor::Base@, and is equipped to deal with the parameters coming in for a particular "parent" model. The conductor refers to this as the "resource". For example, if we want to use a conductor to construct @Book@ objects, the basic conductor will look like this:
 
-<pre><code>class BookConductor < Conductor::Base
+<pre><code>class BookConductor &lt; Conductor::Base
 end</code></pre>
 
 The conductor would expect its "resource" to be a member of the @Book@ class, and it should be instantiated with a @Book@ object passed as a parameter:
