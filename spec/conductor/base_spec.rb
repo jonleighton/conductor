@@ -188,6 +188,10 @@ describe Conductor::Base, "when the resource is not able to save!" do
     
     @conductor = Conductor::Base.new(@resource)
     @conductor.updaters << stub_everything(:save! => true) << stub_everything(:save! => true)
+    @conductor.updaters.each do |updater|
+      updater.stubs(:records).returns([])
+      rand(10).times { updater.records << stub_everything }
+    end 
     
     @connection = stub_everything
     @conductor.stubs(:connection).returns(@connection)
@@ -195,6 +199,16 @@ describe Conductor::Base, "when the resource is not able to save!" do
 
   it "should return false when saved" do
     @conductor.save.should == false
+  end
+  
+  it "should call valid? for the resource and all of the records in the updater" do
+    @resource.expects(:valid?)
+    @conductor.updaters.each do |updater|
+      updater.records.each do |record|
+        record.expects(:valid?)
+      end
+    end
+    @conductor.save
   end
   
   it "should raise a Conductor::ConductorInvalid exception on save!" do
@@ -263,9 +277,6 @@ describe Conductor::Base, "when the resource has error, and one of the records i
   end
   
   it "should aggregate all the errors from the resource and the records in the updaters" do
-    @resource.expects(:valid?)
-    @updater.records.each { |rec| rec.expects(:valid?) }
-    
     errors = @conductor.errors.full_messages
     errors.length.should == 2
     errors.should include("Foo is totally wrong!")
