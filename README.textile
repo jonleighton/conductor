@@ -81,11 +81,11 @@ end</code></pre>
 
 We can list all the authors in the form like so:
 
-<pre><code><input type="checkbox" name="book[author_ids][]" value="4"> Eric Freeman
+<pre><input type="checkbox" name="book[author_ids][]" value="4"> Eric Freeman
 <input type="checkbox" name="book[author_ids][]" value="1"> DHH
 <input type="checkbox" name="book[author_ids][]" value="9"> Kathy Sierra
 <input type="checkbox" name="book[author_ids][]" value="8"> Elisabeth Freeman
-<input type="checkbox" name="book[author_ids][]" value="6"> Dave Thomas</code></pre>
+<input type="checkbox" name="book[author_ids][]" value="6"> Dave Thomas</pre>
 
 If we check "DHH" and "Dave Thomas", our parameters will be:
 
