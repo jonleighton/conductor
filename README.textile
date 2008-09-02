@@ -1,0 +1,207 @@
+h1. Conductor Plugin
+
+h2. IMPORTANT NOTE
+
+This has just been copied directly from some of the internal documentation at my company. I don't guarantee it will make sense to you at the moment
+but it hopefully will be better than nothing. We also have some code to generate the necessary view stuff, but it's not in a form which I can quickly
+extract at the moment and since I am trying to get this ready to present at the "RejectConf" tonight I am leaving that for now.
+
+h2. Introduction
+
+A Conductor is a sort of "middle man" which sits between the raw parameters coming in from a request and the actual object(s) they represent. It was inspired by "this blog post":http://blog.new-bamboo.co.uk/2007/8/31/presenters-conductors-on-rails (from New Bamboo), and some work Jon L did on a previous project.
+
+The Conductor is useful for constructing complex object hierarchies in a single request. It is generally not useful for dealing with single objects, where asssigning the parameters directly to the @attributes@ is usually sufficient.
+
+When we are creating a number of different objects in one request, if one of the individual saves fails, we don't want the rest to be committed. We also don't want any objects to be deleted, which may have been deleted if everything was successful. The Conductor keeps a track of which objects are being added, updated and deleted, and will perform all of this in a transaction which will roll back if anything fails.
+
+When a failure does occur, the Conductor can aggregate all the error messages from the different objects together so they can be easily displayed to the user.
+
+The Conductor plugin is current _not_ "feature complete" to an extent where it could be dropped into any project and be used in many different ways. Only the features which are directly useful to our project have been implemented so far.
+
+h2. The Basics
+
+At the most basic level, you create a specific conductor class, which sub-classes @Conductor::Base@, and is equipped to deal with the parameters coming in for a particular "parent" model. The conductor refers to this as the "resource". For example, if we want to use a conductor to construct @Book@ objects, the basic conductor will look like this:
+
+<pre><code>class BookConductor < Conductor::Base
+end</code></pre>
+
+The conductor would expect its "resource" to be a member of the @Book@ class, and it should be instantiated with a @Book@ object passed as a parameter:
+
+<pre><code>@book = Book.new
+@book_conductor = BookConductor.new(@book)</code></pre>
+
+The conductor uses @method_missing@ to delegate all unknown methods to the resource (@@book@):
+
+<pre><code>@book.name # => "Head First Design Patterns"
+@book_conductor.name # => "Head First Design Patterns"
+
+# We can change the @book using the conductor
+@book_conductor.name = "Agile Web Development with Rails"
+@book.name # => "Agile Web Development with Rails"</code></pre>
+
+The conductor has an @attributes=@ method which will, by default, just pass the given parameters to the resource's @attributes=@ method:
+
+<pre><code>@book.name # => "Head First Design Patterns"
+@book_conductor.attributes = { :name => "Agile Web Development with Rails" }
+@book.name # => "Agile Web Development with Rails"</code></pre>
+
+Suppose, the @Book@ class has an association like so:
+
+<pre><code>class Book < ActiveRecord::Base
+  belongs_to :publisher
+end</code></pre>
+
+Perhaps for UI reasons, we want to have a free text field in the form, in which the user can type the publisher's name. In order to translate that into the proper record, we need to try to look up the publisher by name. We could do it in the controller, which would be quite messy. We could do it in the model (have a @publisher_name=@ method), but that would destroy the example ;). We can also do it in the conductor, by defining a method which knows how to translate that particular parameter in something the resource knows how to interact with:
+
+<pre><code>class BookConductor < Conductor::Base
+  def publisher=(name)
+    resource.publisher = Publisher.find_by_name(name)
+  end
+end</code></pre>
+
+Before passing the parameters to the resource's @attributes=@ method, the conductor will go through each of them and see if the conductor has an assignment method for any of them. If so, that method will be used instead of passing the parameter to the resource. So:
+
+<pre><code>@book_conductor.attributes = { :name => "Agile Web Development with Rails", :publisher => "PragProg" }</code></pre>
+
+Results in these calls:
+
+<pre><code>@book_conductor.publisher = "PragProg"
+@book.atttributes = { :name => "Agile Web Development with Rails" }</code></pre>
+
+h2. Conducting one-to-many associations
+
+h3. Rationale
+
+Sometimes we may wish to specify one-to-many associations in the form for an object. Following our book example, we might say that any given book can have one or more authors (who can author one or more books). To start with, we could do this with a @has_and_belongs_to_many@ association:
+
+<pre><code>class Book < ActiveRecord::Base
+  belongs_to :publisher
+  has_and_belongs_to_many :authors
+end</code></pre>
+
+We can list all the authors in the form like so:
+
+<pre><code><input type="checkbox" name="book[author_ids][]" value="4"> Eric Freeman
+<input type="checkbox" name="book[author_ids][]" value="1"> DHH
+<input type="checkbox" name="book[author_ids][]" value="9"> Kathy Sierra
+<input type="checkbox" name="book[author_ids][]" value="8"> Elisabeth Freeman
+<input type="checkbox" name="book[author_ids][]" value="6"> Dave Thomas</code></pre>
+
+If we check "DHH" and "Dave Thomas", our parameters will be:
+
+<pre><code>params[:book] # => { :author_ids => ["1", "6"] }</code></pre>
+
+When we update the attributes, the associated authors will be automatically updated by Active Record. There are two downsides to this method:
+
+# If the @@book@ fails to save for some other reason, the change in the list of authors *will not be rolled back*. This is because ActiveRecord makes the change immediately when you assign to @author_ids=@ and @authors=@
+# For Rails <= 2.0, it cannot be used with @:through@ associations, because they don't support @author_ids=@ and @authors=@. According to the docs, support has been added in Rails 2.1 though.
+
+The Conductor plugin aims to solve these problems by acting as a "buffer"; it stores the changes which have been made to a collection association from the form, but it doesn't actually _make_ the changes until the conductor is asked to save, so everything can happen together in a transaction.
+
+h3. Implementation
+
+There should probably be, and perhaps is, a way to use has_and_belongs_to_many associations with a Conductor, but because we are using @:through@ associations exclusively, I will focus on how to use the 
+Conductor plugin with those.
+
+We have our through association:
+
+<pre><code>class Book < ActiveRecord::Base
+  belongs_to :publisher
+  has_many :authorships
+  has_many :authors, :through => :authorships
+end</code></pre>
+
+In order to change the authors who are associated with the book, we need to create/update/delete authorships. Therefore, we specify in the conductor that we would like to conduct this association:
+
+<pre><code>class BookConductor < Conductor::Base
+  conduct :authorships
+end</code></pre>
+
+This declaration defines 3 methods:
+
+# @BookConductor#authorships@, which returns a list of authorships associated with the book (but not necessarily saved to the database yet)
+# @BookConductor#authorships=@, which takes parameters from the form and works out which Authorship records should be created/updated/deleted
+# @BookConductor#authorships_updater@, which stores a reference to an instance of @Conductor::Updater@. The updater is the workhorse which works out how to make the necessary changes which result in the desired associations, but this method is primarily for internal use by @Conductor::Base@.
+
+A fourth method (@potential_authorships@) is also defined, but we will get to that later.
+
+@BookConductor#authorships=@ expects to be given parameters in a specific format:
+
+<pre><code>params[:book] = {
+  :authorships => {
+    1 => { :author_id => "1" },
+    2 => { :author_id => "6" }
+  }
+}</code></pre>
+
+As explained above, only the <code>params[:book][:authorships]</code> hash would be assigned to @authorships=@.
+
+These params mean that two authors should be associated with the book, by means of two Authorship records, which have their author_id set to 1 and 6 respectively. The keys (1 and 2) in the main <code>params[:book][:authorships]</code> hash are *irrelevant* to the actual data being passed in. They act only as a method of separating information in a way which can be passed in a HTTP request, so we can have more than one attribute in each of the authorship record hashes.
+
+We could mark up the form like so:
+
+<pre><code><input type="checkbox" name="book[authorships][1][author_id]" value="4"> Eric Freeman
+<input type="checkbox" name="book[authorships][2][author_id]" value="1"> DHH
+<input type="checkbox" name="book[authorships][3][author_id]" value="9"> Kathy Sierra
+<input type="checkbox" name="book[authorships][4][author_id]" value="8"> Elisabeth Freeman
+<input type="checkbox" name="book[authorships][5][author_id]" value="6"> Dave Thomas</code></pre>
+
+h3. Data on the join table
+
+Imagine we now have a "role" string field on the Authorship model. If we select somebody as an author of a book, we want to be able to specify what their role was in its authorship. For example, say that in "Head First Design Patterns", Eric Freeman is a lead author, and Kathy Sierra is a contributor. So we have a form like so:
+
+<pre><code><input type="checkbox" name="book[authorships][1][author_id]" value="4"> Eric Freeman, role: <input type="text" name="book[authorships][1][role]">
+<input type="checkbox" name="book[authorships][2][author_id]" value="1"> DHH, role: <input type="text" name="book[authorships][2][role]">
+<input type="checkbox" name="book[authorships][3][author_id]" value="9"> Kathy Sierra, role: <input type="text" name="book[authorships][3][role]">
+<input type="checkbox" name="book[authorships][4][author_id]" value="8"> Elisabeth Freeman, role: <input type="text" name="book[authorships][4][role]">
+<input type="checkbox" name="book[authorships][5][author_id]" value="6"> Dave Thomas, role: <input type="text" name="book[authorships][5][role]"></code></pre>
+
+Suppose we check "Eric Freeman" and "Kathy Sierra" and fill in their roles as "Lead" and "Contributor" respectively. We then get the following parameters:
+
+<pre><code>params[:book] = {
+  :authorships => {
+    1 => { :author_id => "4", :role => "Lead" },
+    2 => { :role => "" },
+    3 => { :author_id => "9", :role => "Contributor" },
+    4 => { :role => "" },
+    5 => { :role => "" }
+  }
+}</code></pre>
+
+The three authors we have no selected have still had their "role" field submitted in the request. This will result in the @Conductor::Updater@ object constructing 5 @Authorship@ objects, 3 or which will have an @author_id@ which is @nil@. This will, in turn, result in validation errors and the conductor will fail to save.
+
+In order to solve this problem, we need to specify that the @author_id@ field must be present in order for the updater to consider that record to be a part of the parameters. We do that using the @:require_attribute@ option:
+
+<pre><code>class BookConductor < Conductor::Base
+  conduct :authorships, :require_attribute => :author_id
+end</code></pre>
+
+h3. Saving the records
+
+As mentioned earlier, one of the reasons for the conductor plugin is to be able to change collection associations without having to actually commit the changes to the database until we are ready to save the base object.
+
+In order to save each association, we need to do two things:
+
+# Delete all the records which _were_ associated, but which we now want to remove
+# Save all the new and updated records (the ones which we now want to be associated)
+
+For this, the @Conductor::Updater@ class has a @save!@ method which does that. It calls @save!@ on each of the records, so it will raise an @ActiveRecord::RecordInvalid@ exception if any of them fail to save.
+
+The @Conductor::Base@ class has @save@, @save!@, @update_attributes@ and @update_attributes!@ methods, which work the same was as they do for an Active Record object, except that failure of either of the bang methods raises a @Conductor::ConductorInvalid@ exception rather than an @ActiveRecord::RecordInvalid@.
+
+All of those methods eventually call the @save@ method, which does all its dirty work in a transaction in case any part fails. Fundamentally it does just two things:
+
+# Iterate over each of the updaters and call their @save!@ method
+# Call the resource's @save!@ method
+
+The reason the updaters are saved first is so that the resource can have validations which check its associations. For instance, you might want to validate that there is at least one associated object.
+
+If the resource is a new record things are more complicated. In order for a join record to save, ActiveRecord requires that the foreign keys on each side are set. Because we save the updaters before the resource, we wouldn't usually actually know the resource's id at this point. To get around this, we select the next value in the id sequence from the database and assign that to the resource before it is saved. We then have the issue of foreign key constraints not being satisfied. We work around this by allowing the necessary foreign key constraint to be deferrable (see postgres manual), and setting the constraints to deferred at the beginning of the transaction.
+
+If everything is successful the @save@ method return true as expected. If there is an @ActiveRecord::RecordInvalid@ exception, the id will be set back to nil for if the resource is a new record, and the method will return false.
+
+One additional detail is that the conductor has @before_save@ and @after_save@ callbacks, which work in exactly the same way as Active Record callbacks. They are run inside the transaction as well.
+
+h3. Errors
+
+As mentioned earlier, the conductor aggregates error messages into one @ActiveRecord::Errors@ object, which can be accessed by calling the conductor's @errors@ method. So it can be rendered in the page by using the standard method: @error_messages_for :book_conductor@. The conductor does not do anything clever to differentiate error messages which come from the resource from ones which come from an associated object, so it is up to you to make sure these are specified in an unambiguous way.
