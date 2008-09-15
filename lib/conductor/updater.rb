@@ -8,6 +8,7 @@ module Conductor
     end
     
     delegate :resource, :to => :conductor
+    delegate :primary_key_name, :to => :reflection
     
     def params=(new_params)
       # The keys only serve to group fields together, so we can drop them at this point
@@ -39,8 +40,10 @@ module Conductor
     end
     
     def set_foreign_keys
-      new_records.each do |record|
-        record.send("#{reflection.primary_key_name}=", resource.id)
+      records.each do |record|
+        if record.send(primary_key_name).nil?
+          record.send("#{reflection.primary_key_name}=", resource.id)
+        end
       end
     end
     

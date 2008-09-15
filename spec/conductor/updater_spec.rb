@@ -64,11 +64,13 @@ module Conductor
       @updater.reflection.should == reflection
     end
     
-    it "should set, on all the new records, the primary_key_name specified by the reflection to the resource's id, when asked to set the foreign keys" do
+    it "should set, on all records where it is nil, the primary_key_name specified by the reflection to the resource's id, " +
+       "when asked to set the foreign keys" do
       @updater.stubs(:reflection).returns(stub(:primary_key_name => "foo_id"))
-      @updater.stubs(:new_records).returns(new_records = [stub, stub, stub])
+      @updater.stubs(:records).returns(records = [stub(:foo_id => 60), stub(:foo_id => nil), stub(:foo_id => nil)])
       @resource.stubs(:id).returns(60)
-      new_records.each { |r| r.expects(:foo_id=).with(60) }
+      records[1].expects(:foo_id=).with(60)
+      records[2].expects(:foo_id=).with(60)
       @updater.set_foreign_keys
     end
   end
