@@ -20,11 +20,13 @@ class DummyAssociationCollection < Array
 end
 
 module SpecHelpers
-  def stub_updater(name, conducted_records = [], options = {})
+  def stub_updater(conducted_name, resource_name = :idontfuckingcare, conducted_records = [], options = {})
     @conducted = DummyAssociationCollection.new(conducted_records)
-    @resource = stub_everything(name => @conducted, :class => stub_everything)
+    @resource = stub_everything(conducted_name => @conducted, :class => stub_everything)
+    @reflection = stub_everything(:primary_key_name => resource_name.to_s.singularize.foreign_key)
+    @resource.class.stubs(:reflect_on_association).with(conducted_name).returns(@reflection)
     @conductor = stub_everything(:resource => @resource)
-    Conductor::Updater.new(@conductor, name, options)
+    Conductor::Updater.new(@conductor, conducted_name, options)
   end
 end
 
@@ -33,7 +35,7 @@ module Conductor
     include SpecHelpers
     
     before do
-      @updater = stub_updater(:tables, [stub, stub], :require_attribute => :table_id)
+      @updater = stub_updater(:tables, :house, [stub, stub], :require_attribute => :table_id)
       @updater.run(1 => { "foo" => :bar, "table_id" => 4 }, 2 => { "hoo" => :haa }, 3 => { "bla" => :yar, "table_id" => 91 }, 4 => { "table_id" => "0" })
     end
     
@@ -60,17 +62,15 @@ module Conductor
     end
     
     it "should return the reflection from the resource's class of the 'tables' association, when asked for the reflection" do
-      @resource.class.stubs(:reflect_on_association).with(:tables).returns(reflection = stub)
-      @updater.reflection.should == reflection
+      @updater.reflection.should == @reflection
     end
     
     it "should set, on all records where it is nil, the primary_key_name specified by the reflection to the resource's id, " +
        "when asked to set the foreign keys" do
-      @updater.stubs(:reflection).returns(stub(:primary_key_name => "foo_id"))
-      @updater.stubs(:records).returns(records = [stub(:foo_id => 60), stub(:foo_id => nil), stub(:foo_id => nil)])
+      @updater.stubs(:records).returns(records = [stub(:house_id => 60), stub(:house_id => nil), stub(:house_id => nil)])
       @resource.stubs(:id).returns(60)
-      records[1].expects(:foo_id=).with(60)
-      records[2].expects(:foo_id=).with(60)
+      records[1].expects(:house_id=).with(60)
+      records[2].expects(:house_id=).with(60)
       @updater.set_foreign_keys
     end
   end
@@ -80,11 +80,13 @@ module Conductor
     include SpecHelpers
     
     before do
-      @updater = stub_updater(:memberships, [
+      @existing_records = [
         OpenStruct.new("membership_id" => 6), # To be deleted
         OpenStruct.new("membership_id" => 2), # To be updated
         OpenStruct.new("membership_id" => 9)  # To be deleted
-      ], 'require_attribute' => :membership_id)
+      ]
+      @updater = stub_updater(:memberships, :club, @existing_records, 'require_attribute' => :membership_id)
+      @existing_records.each { |r| r.club = @resource }
       
       @updater.run(
         1 => { "membership_id" => 2 }, # Updated
@@ -104,6 +106,10 @@ module Conductor
     it "should have a list of new records containing objects build from the params" do
       @updater.new_records.should have(1).item
       @updater.new_records[0].membership_id.should == 7
+    end
+    
+    it "should assign the association to the resource on each of the new records" do
+      @updater.new_records[0].club.should == @resource
     end
     
     it "should have a list of records equal to the updated records plus the new records" do

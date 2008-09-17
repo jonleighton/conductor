@@ -39,10 +39,11 @@ module Conductor
       @reflection ||= resource.class.reflect_on_association(name.to_sym)
     end
     
+    # TODO: Is this necessary given that we are associating them (without keys) in update_item?
     def set_foreign_keys
       records.each do |record|
         if record.send(primary_key_name).nil?
-          record.send("#{reflection.primary_key_name}=", resource.id)
+          record.send("#{primary_key_name}=", resource.id)
         end
       end
     end
@@ -112,6 +113,7 @@ module Conductor
       
       def update_item(params)
         new_record = conducted.build(params)
+        new_record.send("#{primary_key_name.sub(/_id$/, '')}=", resource) # FIXME: This won't work with custom primary keys
         
         if original_record?(new_record)
           # Use the record that already exists, rather than the new one We do
