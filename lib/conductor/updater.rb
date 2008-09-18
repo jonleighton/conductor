@@ -39,7 +39,9 @@ module Conductor
       @reflection ||= resource.class.reflect_on_association(name.to_sym)
     end
     
-    # TODO: Is this necessary given that we are associating them (without keys) in update_item?
+    # This is necessary because when the resource is a new record the foreign key won't
+    # be automatically assigned in update_item. However, it should probably be invoked
+    # in save!, rather than relying in the Conductor::Base to invoke it.
     def set_foreign_keys
       records.each do |record|
         if record.send(primary_key_name).nil?
