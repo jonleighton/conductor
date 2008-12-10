@@ -160,7 +160,7 @@ module Conductor
       end
       
       def next_id
-        connection.execute("SELECT nextval('#{resource.class.sequence_name}');")[0][0].to_i
+        connection.select_rows("SELECT nextval('#{resource.class.sequence_name}');")[0][0].to_i
       end
   end
 end

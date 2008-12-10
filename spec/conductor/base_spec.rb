@@ -145,7 +145,7 @@ describe Conductor::Base, "when all the updaters and the resource are able to sa
   describe "and the resource is a new record" do
     before do
       @resource.stubs(:new_record?).returns(true)
-      @connection.stubs(:execute).with("SELECT nextval('the_sequence');").returns([["142"]]);
+      @connection.stubs(:select_rows).with("SELECT nextval('the_sequence');").returns([["142"]]);
     end
     
     it "should run the before_save callback, defer the constraints, set the record's id, set the foreign keys on the updaters, " +
@@ -222,7 +222,7 @@ describe Conductor::Base, "when the resource is not able to save!" do
   describe "and the resource is a new record" do
     before do
       @resource.stubs(:new_record?).returns(true)
-      @connection.stubs(:execute).with("SELECT nextval('the_sequence');").returns([["142"]]);
+      @connection.stubs(:select_rows).with("SELECT nextval('the_sequence');").returns([["142"]]);
     end
     
     it "should set the id of the record back to nil when saved" do
