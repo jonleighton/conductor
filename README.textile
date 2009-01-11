@@ -1,24 +1,35 @@
 h1. Conductor Plugin
 
-h2. IMPORTANT NOTE
+Conductor is a Rails plugin which *helps you manage creating and updating a record and its associations via a single form submission*.
 
-This has just been copied directly from some of the internal documentation at my company. I don't guarantee it will make sense to you at the moment
-but it hopefully will be better than nothing. We also have some code to generate the necessary view stuff, but it's not in a form which I can quickly
-extract at the moment and since I am trying to get this ready to present at the "RejectConf" tonight I am leaving that for now.
+It does this by:
 
-h2. Introduction
+* Allowing complex nested parameters to represent associations
+* Creating, finding or deleting associated objects as necessary
+* Only performing database changes when told to and inside a transaction
+* Aggregating the error messages occurring on associated objects
 
-A Conductor is a sort of "middle man" which sits between the raw parameters coming in from a request and the actual object(s) they represent. It was inspired by "this blog post":http://blog.new-bamboo.co.uk/2007/8/31/presenters-conductors-on-rails (from New Bamboo), and some work Jon L did on a previous project.
+h2. Status
 
-The Conductor is useful for constructing complex object hierarchies in a single request. It is generally not useful for dealing with single objects, where asssigning the parameters directly to the @attributes@ is usually sufficient.
+At the moment:
 
-When we are creating a number of different objects in one request, if one of the individual saves fails, we don't want the rest to be committed. We also don't want any objects to be deleted, which may have been deleted if everything was successful. The Conductor keeps a track of which objects are being added, updated and deleted, and will perform all of this in a transaction which will roll back if anything fails.
+* Conductor is not "feature complete" or API-stable
+* Clear, concise documentation is lacking
+* It only works with PostgreSQL
 
-When a failure does occur, the Conductor can aggregate all the error messages from the different objects together so they can be easily displayed to the user.
+However:
 
-The Conductor plugin is current _not_ "feature complete" to an extent where it could be dropped into any project and be used in many different ways. Only the features which are directly useful to our project have been implemented so far.
+* I has almost 100% RSpec coverage
+* It has been used and developed on a large, real-world project which has received extensive testing
+* There is an "example app":https://github.com/jonleighton/conductor_example/tree available for inspection
 
-h2. The Basics
+The current focus is to improve the documentation and allow this to drive API changes so the plugin can be more easily understood.
+
+h2. Documentation
+
+*Please note*: This documentation was written a while ago as internal documentation for the project for which Conductor was developed. It is written more like and tutorial and so will make most sense if read from start to finish. I am aware it ought to be substantially easier to grasp the core concepts and this is a general failing of the plugin at the moment - something I would like to fix.
+
+h3. The Basics
 
 At the most basic level, you create a specific conductor class, which sub-classes @Conductor::Base@, and is equipped to deal with the parameters coming in for a particular "parent" model. The conductor refers to this as the "resource". For example, if we want to use a conductor to construct @Book@ objects, the basic conductor will look like this:
 
@@ -68,9 +79,9 @@ Results in these calls:
 <pre><code>@book_conductor.publisher = "PragProg"
 @book.atttributes = { :name => "Agile Web Development with Rails" }</code></pre>
 
-h2. Conducting one-to-many associations
+h3. Conducting one-to-many associations
 
-h3. Rationale
+h4. Rationale
 
 Sometimes we may wish to specify one-to-many associations in the form for an object. Following our book example, we might say that any given book can have one or more authors (who can author one or more books). To start with, we could do this with a @has_and_belongs_to_many@ association:
 
@@ -81,7 +92,7 @@ end</code></pre>
 
 We can list all the authors in the form like so:
 
-<pre><code>&lt;input type="checkbox" name="book[author_ids][]" value="4"&gt; Eric Freeman
+<pre><code><input type="checkbox" name="book[author_ids][]" value="4"> Eric Freeman
 &lt;input type="checkbox" name="book[author_ids][]" value="1"&gt; DHH
 &lt;input type="checkbox" name="book[author_ids][]" value="9"&gt; Kathy Sierra
 &lt;input type="checkbox" name="book[author_ids][]" value="8"&gt; Elisabeth Freeman
@@ -146,7 +157,7 @@ We could mark up the form like so:
 &lt;input type="checkbox" name="book[authorships][4][author_id]" value="8"&gt; Elisabeth Freeman
 &lt;input type="checkbox" name="book[authorships][5][author_id]" value="6"&gt; Dave Thomas</code></pre>
 
-h3. Data on the join table
+h4. Data on the join table
 
 Imagine we now have a "role" string field on the Authorship model. If we select somebody as an author of a book, we want to be able to specify what their role was in its authorship. For example, say that in "Head First Design Patterns", Eric Freeman is a lead author, and Kathy Sierra is a contributor. So we have a form like so:
 
@@ -176,7 +187,7 @@ In order to solve this problem, we need to specify that the @author_id@ field mu
   conduct :authorships, :require_attribute => :author_id
 end</code></pre>
 
-h3. Saving the records
+h4. Saving the records
 
 As mentioned earlier, one of the reasons for the conductor plugin is to be able to change collection associations without having to actually commit the changes to the database until we are ready to save the base object.
 
@@ -202,6 +213,6 @@ If everything is successful the @save@ method return true as expected. If there 
 
 One additional detail is that the conductor has @before_save@ and @after_save@ callbacks, which work in exactly the same way as Active Record callbacks. They are run inside the transaction as well.
 
-h3. Errors
+h4. Errors
 
 As mentioned earlier, the conductor aggregates error messages into one @ActiveRecord::Errors@ object, which can be accessed by calling the conductor's @errors@ method. So it can be rendered in the page by using the standard method: @error_messages_for :book_conductor@. The conductor does not do anything clever to differentiate error messages which come from the resource from ones which come from an associated object, so it is up to you to make sure these are specified in an unambiguous way.
