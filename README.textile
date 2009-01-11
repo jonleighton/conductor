@@ -27,9 +27,9 @@ The current focus is to improve the documentation and allow this to drive API ch
 
 h2. Relationship with the Presenter pattern
 
-This started out as an implementation of a conductor, as described by "New Bamboo":http://new-bamboo.co.uk/ in their blog post ""Presenters and Conductors on Rails":http://blog.new-bamboo.co.uk/2007/8/31/presenters-conductors-on-rails".
+This started out as an implementation of a conductor as described by "New Bamboo":http://new-bamboo.co.uk/ in their blog post ""Presenters and Conductors on Rails":http://blog.new-bamboo.co.uk/2007/8/31/presenters-conductors-on-rails".
 
-A conductor initially seems to be similar to a "presenter":http://www.jayfields.com/rails_presenter.htm, particular as the presenter example Jay Fields gives does manage multiple objects in order to keep the controller concise. However, the distinction in my mind is this:
+A conductor initially seems similar to a "presenter":http://www.jayfields.com/rails_presenter.htm, particularly as the presenter example Jay Fields gives does manage multiple objects in order to keep the controller concise. However, the distinction in my mind is this:
 
 * A *presenter* handles _view-related_ state and behaviour in a cleaner and more object-oriented way than helpers
 * A *conductor* assists the _controller_ in parsing form parameters into one or more objects, and saving them
