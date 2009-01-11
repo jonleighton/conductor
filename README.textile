@@ -1,29 +1,38 @@
 h1. Conductor Plugin
 
-Conductor is a Rails plugin which *helps you manage creating and updating a record and its associations via a single form submission*.
+Conductor is a "Rails":http://rubyonrails.org/ plugin which *helps you manage creating and updating a record and its associations via a single form submission*.
 
 It does this by:
 
 * Allowing complex nested parameters to represent associations
-* Creating, finding or deleting associated objects as necessary
-* Only performing database changes when told to and inside a transaction
-* Aggregating the error messages occurring on associated objects
+* Creating, finding or deleting the associated objects as necessary
+* Only performing database changes when told to and within a transaction
+* Aggregating error messages occurring on associated objects
 
 h2. Status
 
 At the moment:
 
-* Conductor is not "feature complete" or API-stable
+* It is not "feature complete" or API-stable
 * Clear, concise documentation is lacking
 * It only works with PostgreSQL
 
 However:
 
-* I has almost 100% RSpec coverage
+* It has almost 100% RSpec coverage
 * It has been used and developed on a large, real-world project which has received extensive testing
 * There is an "example app":https://github.com/jonleighton/conductor_example/tree available for inspection
 
 The current focus is to improve the documentation and allow this to drive API changes so the plugin can be more easily understood.
+
+h2. Relationship with the Presenter pattern
+
+This started out as an implementation of a conductor, as described by "New Bamboo":http://new-bamboo.co.uk/ in their blog post ""Presenters and Conductors on Rails":http://blog.new-bamboo.co.uk/2007/8/31/presenters-conductors-on-rails".
+
+A conductor initially seems to be similar to a "presenter":http://www.jayfields.com/rails_presenter.htm, particular as the presenter example Jay Fields gives does manage multiple objects in order to keep the controller concise. However, the distinction in my mind is this:
+
+* A *presenter* handles _view-related_ state and behaviour in a cleaner and more object-oriented way than helpers
+* A *conductor* assists the _controller_ in parsing form parameters into one or more objects, and saving them
 
 h2. Documentation
 
@@ -93,10 +102,10 @@ end</code></pre>
 We can list all the authors in the form like so:
 
 <pre><code><input type="checkbox" name="book[author_ids][]" value="4"> Eric Freeman
-&lt;input type="checkbox" name="book[author_ids][]" value="1"&gt; DHH
-&lt;input type="checkbox" name="book[author_ids][]" value="9"&gt; Kathy Sierra
-&lt;input type="checkbox" name="book[author_ids][]" value="8"&gt; Elisabeth Freeman
-&lt;input type="checkbox" name="book[author_ids][]" value="6"&gt; Dave Thomas</code></pre>
+<input type="checkbox" name="book[author_ids][]" value="1"> DHH
+<input type="checkbox" name="book[author_ids][]" value="9"> Kathy Sierra
+<input type="checkbox" name="book[author_ids][]" value="8"> Elisabeth Freeman
+<input type="checkbox" name="book[author_ids][]" value="6"> Dave Thomas</code></pre>
 
 If we check "DHH" and "Dave Thomas", our parameters will be:
 
@@ -111,8 +120,7 @@ The Conductor plugin aims to solve these problems by acting as a "buffer"; it st
 
 h3. Implementation
 
-There should probably be, and perhaps is, a way to use has_and_belongs_to_many associations with a Conductor, but because we are using @:through@ associations exclusively, I will focus on how to use the 
-Conductor plugin with those.
+There should probably be, and perhaps is, a way to use has_and_belongs_to_many associations with a Conductor, but because we are using @:through@ associations exclusively, I will focus on how to use the Conductor plugin with those.
 
 We have our through association:
 
@@ -151,21 +159,21 @@ These params mean that two authors should be associated with the book, by means 
 
 We could mark up the form like so:
 
-<pre><code>&lt;input type="checkbox" name="book[authorships][1][author_id]" value="4"&gt; Eric Freeman
-&lt;input type="checkbox" name="book[authorships][2][author_id]" value="1"&gt; DHH
-&lt;input type="checkbox" name="book[authorships][3][author_id]" value="9"&gt; Kathy Sierra
-&lt;input type="checkbox" name="book[authorships][4][author_id]" value="8"&gt; Elisabeth Freeman
-&lt;input type="checkbox" name="book[authorships][5][author_id]" value="6"&gt; Dave Thomas</code></pre>
+<pre><code><input type="checkbox" name="book[authorships][1][author_id]" value="4"> Eric Freeman
+<input type="checkbox" name="book[authorships][2][author_id]" value="1"> DHH
+<input type="checkbox" name="book[authorships][3][author_id]" value="9"> Kathy Sierra
+<input type="checkbox" name="book[authorships][4][author_id]" value="8"> Elisabeth Freeman
+<input type="checkbox" name="book[authorships][5][author_id]" value="6"> Dave Thomas</code></pre>
 
 h4. Data on the join table
 
 Imagine we now have a "role" string field on the Authorship model. If we select somebody as an author of a book, we want to be able to specify what their role was in its authorship. For example, say that in "Head First Design Patterns", Eric Freeman is a lead author, and Kathy Sierra is a contributor. So we have a form like so:
 
-<pre><code>&lt;input type="checkbox" name="book[authorships][1][author_id]" value="4"&gt; Eric Freeman, role: &lt;input type="text" name="book[authorships][1][role]"&gt;
-&lt;input type="checkbox" name="book[authorships][2][author_id]" value="1"&gt; DHH, role: &lt;input type="text" name="book[authorships][2][role]"&gt;
-&lt;input type="checkbox" name="book[authorships][3][author_id]" value="9"&gt; Kathy Sierra, role: &lt;input type="text" name="book[authorships][3][role]"&gt;
-&lt;input type="checkbox" name="book[authorships][4][author_id]" value="8"&gt; Elisabeth Freeman, role: &lt;input type="text" name="book[authorships][4][role]"&gt;
-&lt;input type="checkbox" name="book[authorships][5][author_id]" value="6"&gt; Dave Thomas, role: &lt;input type="text" name="book[authorships][5][role]"&gt;</code></pre>
+<pre><code><input type="checkbox" name="book[authorships][1][author_id]" value="4"> Eric Freeman, role: <input type="text" name="book[authorships][1][role]">
+<input type="checkbox" name="book[authorships][2][author_id]" value="1"> DHH, role: <input type="text" name="book[authorships][2][role]">
+<input type="checkbox" name="book[authorships][3][author_id]" value="9"> Kathy Sierra, role: <input type="text" name="book[authorships][3][role]">
+<input type="checkbox" name="book[authorships][4][author_id]" value="8"> Elisabeth Freeman, role: <input type="text" name="book[authorships][4][role]">
+<input type="checkbox" name="book[authorships][5][author_id]" value="6"> Dave Thomas, role: <input type="text" name="book[authorships][5][role]"></code></pre>
 
 Suppose we check "Eric Freeman" and "Kathy Sierra" and fill in their roles as "Lead" and "Contributor" respectively. We then get the following parameters:
 
