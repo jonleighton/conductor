@@ -1,13 +1,15 @@
 h1. Conductor Plugin
 
-Conductor is a "Rails":http://rubyonrails.org/ plugin which *helps you manage creating and updating a record and its associations via a single form submission*.
+Conductor is a "Rails":http://rubyonrails.org/ plugin which *helps you manage creating and updating a record and its associations via a single form submission*. More generally, it is an implementation of the "Unit of Work":http://martinfowler.com/eaaCatalog/unitOfWork.html design pattern.
 
-It does this by:
+What it does:
 
-* Allowing complex nested parameters to represent associations
-* Creating, finding or deleting the associated objects as necessary
-* Only performing database changes when told to and within a transaction
-* Aggregating error messages occurring on associated objects
+* Allows complex nested parameters to represent associations
+* Creates, finds or deletes the associated objects as necessary
+* Performs database changes only when told to and within a transaction
+* Aggregates error messages occurring on the objects it manages
+
+This plugin is written by "Jon Leighton":http://jonathanleighton.com/. You can contact me at j _at_ jonathanleighton _dot_ com.
 
 h2. Status
 
@@ -19,9 +21,9 @@ At the moment:
 
 However:
 
-* It has almost 100% RSpec coverage
+* There is almost 100% RSpec coverage
 * It has been used and developed on a large, real-world project which has received extensive testing
-* There is an "example app":https://github.com/jonleighton/conductor_example/tree available for inspection
+* An "example app":http://github.com/jonleighton/conductor_example/tree available is for inspection
 
 The current focus is to improve the documentation and allow this to drive API changes so the plugin can be more easily understood.
 
@@ -29,7 +31,7 @@ h2. Relationship with the Presenter pattern
 
 This started out as an implementation of a conductor as described by "New Bamboo":http://new-bamboo.co.uk/ in their blog post ""Presenters and Conductors on Rails":http://blog.new-bamboo.co.uk/2007/8/31/presenters-conductors-on-rails".
 
-A conductor initially seems similar to a "presenter":http://www.jayfields.com/rails_presenter.htm, particularly as the presenter example Jay Fields gives does manage multiple objects in order to keep the controller concise. However, the distinction in my mind is this:
+A conductor initially seems similar to a "presenter":http://www.jayfields.com/rails_presenter.htm, particularly as the example Jay Fields gives manages multiple objects in order to keep the controller concise. However, the distinction in my mind is this:
 
 * A *presenter* handles _view-related_ state and behaviour in a cleaner and more object-oriented way than helpers
 * A *conductor* assists the _controller_ in parsing form parameters into one or more objects, and saving them
