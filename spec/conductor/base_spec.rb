@@ -19,53 +19,44 @@ describe Conductor::Base, "when conducting for a Task" do
   it "should raise a NoMethodError if asked for a method which neither it nor the Task responds to" do
     lambda { TaskConductor.bla }.should raise_error(NoMethodError)
   end
-end
-
-describe Conductor::Base, "when asked to conduct 'apples', with some options" do
-  before do
-    @conductor = Conductor::Base.new(stub_everything)
-    @options = { :foo => :bar, :bing => :bong }
-    (class << @conductor; self; end).conduct :apples, @options
+  
+  describe "#has_many" do
+    it "should instantiate a new Associations::HasMany::Builder, and tell it to build, then add it to the list of associations" do
+      options, association = stub, stub
+      Conductor::Associations::HasMany::Builder.stubs(:new).with(TaskConductor, :foo, options).returns(association)
+      association.expects(:build)
+      
+      TaskConductor.has_many :foo, options
+      TaskConductor.associations.should == [association]
+    end
   end
   
-  it "should instantiate the apples updater with the given options" do
-    @conductor.apples_updater.options.should == @options
+  describe "#initialize" do
+    before do
+      @class_associations = [stub, stub, stub]
+      @association_instances = [stub, stub, stub]
+      @class_associations.each_with_index { |a, i| a.stubs(:initialize_instance).with(anything).returns(@association_instances[i]) }
+      TaskConductor.stubs(:associations).returns(@class_associations)
+    end
+    
+    it "should initialize each of the associations and make their instances available" do
+      @conductor = TaskConductor.new(stub)
+      @conductor.associations.should == @association_instances
+    end
   end
 end
 
-describe Conductor::Base, "with a resource, conducting 'memberships'" do
+describe Conductor::Base, "with a resource, with a has_many :memberships association" do
   before do
     @memberships = [stub_everything, stub_everything, stub_everything]
     @resource = stub_everything(:memberships => @people, :class => stub)
     @resource.class.stubs(:transaction).yields
     @conductor = Conductor::Base.new(@resource)
-    (class << @conductor; self; end).conduct :memberships, :require_attribute => :member_id
+    (class << @conductor; self; end).has_many :memberships, :require_attribute => :member_id
   end
   
   it "should make the resource available as an attribute" do
     @conductor.resource.should == @resource
-  end
-  
-  it "should run the memberships updater with the given params when memberships is assigned to" do
-    @conductor.memberships_updater.expects(:run).with(params = stub)
-    @conductor.memberships = params
-  end
-  
-  it "should return the records of the memberhsips updater when asked for the memberships" do
-    @conductor.memberships_updater.stubs(:records).returns(records = stub)
-    @conductor.memberships.should == records
-  end
-  
-  it "should return the potential memberships defined by the resource, merged into the memberships updater, when asked for the potential memberships" do
-    resource_potential, potential = stub, stub
-    @resource.stubs(:potential_memberships).returns(resource_potential)
-    @conductor.memberships_updater.stubs(:merge_into).with(resource_potential).returns(potential)
-    @conductor.potential_memberships.should == potential
-  end
-  
-  it "should add the memberships updater to the list of updaters when memberships is assigned to" do
-    @conductor.memberships = {}
-    @conductor.updaters.should include(@conductor.memberships_updater)
   end
   
   it "should update the standard params on the resource when new attributes are assigned" do
@@ -117,13 +108,13 @@ describe Conductor::Base, "with a resource, conducting 'memberships'" do
   end
 end
 
-describe Conductor::Base, "when all the updaters and the resource are able to save!" do
+describe Conductor::Base, "when all the associations and the resource are able to save!" do
   before do
     @resource = stub_everything(:class => stub_everything(:sequence_name => "the_sequence"), :save! => true)
     @resource.class.stubs(:transaction).yields
     
     @conductor = Conductor::Base.new(@resource)
-    @conductor.updaters << stub_everything(:save! => true) << stub_everything(:save! => true)
+    @conductor.associations << stub_everything(:save! => true) << stub_everything(:save! => true)
     
     @connection = stub_everything
     @conductor.stubs(:connection).returns(@connection)
@@ -148,14 +139,14 @@ describe Conductor::Base, "when all the updaters and the resource are able to sa
       @connection.stubs(:select_rows).with("SELECT nextval('the_sequence');").returns([["142"]]);
     end
     
-    it "should run the before_save callback, defer the constraints, set the record's id, set the foreign keys on the updaters, " +
-       "save! the updaters, save! the resource, then run the after_save callback, when saved" do
+    it "should run the before_save callback, defer the constraints, set the record's id, set the foreign keys on the associations, " +
+       "save! the associations, save! the resource, then run the after_save callback, when saved" do
       save = sequence("save")
       @conductor.expects(:run_callbacks).with(:before_save).in_sequence(save)
       @connection.expects(:execute).with("SET CONSTRAINTS ALL DEFERRED;").in_sequence(save)
       @resource.expects(:id=).with(142).in_sequence(save)
-      @conductor.updaters.each { |u| u.expects(:set_foreign_keys).in_sequence(save) }
-      @conductor.updaters.each { |u| u.expects(:save!).in_sequence(save) }
+      @conductor.associations.each { |a| a.expects(:set_foreign_keys).in_sequence(save) }
+      @conductor.associations.each { |a| a.expects(:save!).in_sequence(save) }
       @resource.expects(:save!).in_sequence(save)
       @conductor.expects(:run_callbacks).with(:after_save).in_sequence(save)
       
@@ -168,10 +159,10 @@ describe Conductor::Base, "when all the updaters and the resource are able to sa
       @resource.stubs(:new_record?).returns(false)
     end
   
-    it "should run the before_save callback, save! the updaters, save! the resource, then run the after_save callback, when saved" do
+    it "should run the before_save callback, save! the associations, save! the resource, then run the after_save callback, when saved" do
       save = sequence("save")
       @conductor.expects(:run_callbacks).with(:before_save).in_sequence(save)
-      @conductor.updaters.each { |u| u.expects(:save!).in_sequence(save) }
+      @conductor.associations.each { |a| a.expects(:save!).in_sequence(save) }
       @resource.expects(:save!).in_sequence(save)
       @conductor.expects(:run_callbacks).with(:after_save).in_sequence(save)
       
@@ -187,10 +178,10 @@ describe Conductor::Base, "when the resource is not able to save!" do
     @resource.class.stubs(:transaction).yields
     
     @conductor = Conductor::Base.new(@resource)
-    @conductor.updaters << stub_everything(:save! => true) << stub_everything(:save! => true)
-    @conductor.updaters.each do |updater|
-      updater.stubs(:records).returns([])
-      rand(10).times { updater.records << stub_everything }
+    @conductor.associations << stub_everything(:save! => true) << stub_everything(:save! => true)
+    @conductor.associations.each do |association|
+      association.stubs(:records).returns([])
+      rand(10).times { association.records << stub_everything }
     end 
     
     @connection = stub_everything
@@ -201,10 +192,10 @@ describe Conductor::Base, "when the resource is not able to save!" do
     @conductor.save.should == false
   end
   
-  it "should call valid? for the resource and all of the records in the updater" do
+  it "should call valid? for the resource and all of the records in the association" do
     @resource.expects(:valid?)
-    @conductor.updaters.each do |updater|
-      updater.records.each do |record|
+    @conductor.associations.each do |association|
+      association.records.each do |record|
         record.expects(:valid?)
       end
     end
@@ -259,7 +250,7 @@ describe Conductor::Base, "with a resource which responds to 'name' and 'age=', 
   end
 end
 
-describe Conductor::Base, "when the resource has error, and one of the records in an updater has an error" do
+describe Conductor::Base, "when the resource has error, and one of the records in an association has an error" do
   before do
     @resource = stub_everything
     @resource.stubs(:errors).returns(ActiveRecord::Errors.new(@resource))
@@ -270,13 +261,13 @@ describe Conductor::Base, "when the resource has error, and one of the records i
     @error_record.errors.add_to_base "You are so stupid man!"
     
     @ok_record = stub_everything(:errors => stub_everything(:each_full => []))
-    @updater = stub_everything(:records => [@ok_record.dup, @ok_record.dup, @error_record, @ok_record.dup])
+    @association = stub_everything(:records => [@ok_record.dup, @ok_record.dup, @error_record, @ok_record.dup])
     
     @conductor = Conductor::Base.new(@resource)
-    @conductor.stubs(:updaters).returns([@updater])
+    @conductor.stubs(:associations).returns([@association])
   end
   
-  it "should aggregate all the errors from the resource and the records in the updaters" do
+  it "should aggregate all the errors from the resource and the records in the associations" do
     errors = @conductor.errors.full_messages
     errors.length.should == 2
     errors.should include("Foo is totally wrong!")
