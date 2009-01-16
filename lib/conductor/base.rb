@@ -35,7 +35,7 @@ class Conductor::Base
   
   def initialize(resource)
     @resource = resource
-    @associations = self.class.associations.map { |association| association.initialize_instance(self) }
+    @associations = self.class.associations.map { |association| association.instantiate_instance(self) }
   end
   
   include ActiveSupport::Callbacks

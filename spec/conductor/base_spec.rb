@@ -35,7 +35,7 @@ describe Conductor::Base, "when conducting for a Task" do
     before do
       @class_associations = [stub, stub, stub]
       @association_instances = [stub, stub, stub]
-      @class_associations.each_with_index { |a, i| a.stubs(:initialize_instance).with(anything).returns(@association_instances[i]) }
+      @class_associations.each_with_index { |a, i| a.stubs(:instantiate_instance).with(anything).returns(@association_instances[i]) }
       TaskConductor.stubs(:associations).returns(@class_associations)
     end
     
