@@ -14,4 +14,12 @@ class Book < ActiveRecord::Base
   def potential_authorships
     authorships.from_authors(*potential_authors)
   end
+  
+  def potential_publishers
+    Publisher.find(:all)
+  end
+  
+  def publisher_name
+    publisher.name
+  end
 end

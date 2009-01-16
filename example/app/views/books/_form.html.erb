@@ -7,7 +7,7 @@
   </p>
   
   <p>
-    <%= form.label :publisher %> (Options are <%= Publisher.find(:all).map(&:name).to_sentence %>.)<br>
+    <%= form.label :publisher %> (Options are <%= @book.potential_publishers.to_sentence %>.)<br>
     <%= form.text_field :publisher %>
   </p>
   
