@@ -1,5 +1,5 @@
 require "active_support/callbacks"
-require "lib/conductor/associations/has_many"
+require "conductor/associations/has_many"
 
 class Conductor::Base
   class << self

@@ -1,5 +1,5 @@
 class Conductor::Associations::HasMany
-  require "lib/conductor/associations/has_many_builder"
+  require "conductor/associations/has_many_builder"
   
   attr_reader :conductor, :name, :params, :original_records, :options
   
