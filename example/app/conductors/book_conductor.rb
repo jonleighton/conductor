@@ -1,5 +1,6 @@
 class BookConductor < Conductor::Base
-  conduct :authorships, :require_attribute => :author_id
+  has_many :authorships, :require => :author_id
+  has_many :tags
   
   def publisher=(publisher_name)
     @publisher = publisher_name

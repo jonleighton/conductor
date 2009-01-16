@@ -2,6 +2,8 @@ class Authorship < ActiveRecord::Base
   belongs_to :book
   belongs_to :author
   
+  delegate :name, :to => :author, :prefix => true
+  
   validate :validate_presence_of_role
   
   def self.from_authors(*authors)
