@@ -10,7 +10,7 @@ module Conductor::ActionView::Helpers
     object_name = ActionController::RecordIdentifier.singular_class_name(conductor.resource)
     
     concat(form_tag(options.delete(:url) || {}, options.delete(:html) || {}), proc.binding)
-    fields_for(object_name, *(args << options), &proc)
+    fields_for(object_name, conductor, *(args << options), &proc)
     concat('</form>', proc.binding)
   end
 end
