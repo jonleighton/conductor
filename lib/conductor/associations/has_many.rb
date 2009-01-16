@@ -16,8 +16,8 @@ class Conductor::Associations::HasMany
     new_params = new_params.values
     
     # Delete any params which don't have the required attribute
-    if options[:require_attribute]
-      required_attr = options[:require_attribute].to_s
+    if options[:require]
+      required_attr = options[:require].to_s
       new_params.delete_if do |item_params|
         item_params[required_attr].blank? ||
         item_params[required_attr] == "0"

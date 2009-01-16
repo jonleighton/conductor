@@ -31,11 +31,11 @@ module SpecHelpers
 end
 
 module Conductor::Associations
-  describe HasMany, "when initialized and run, with a name of 'tables', with the option :require_attribute => :table_id" do
+  describe HasMany, "when initialized and run, with a name of 'tables', with the option :require => :table_id" do
     include SpecHelpers
     
     before do
-      @association = stub_association(:tables, :house, [stub, stub], :require_attribute => :table_id)
+      @association = stub_association(:tables, :house, [stub, stub], :require => :table_id)
       @association.run(1 => { "foo" => :bar, "table_id" => 4 }, 2 => { "hoo" => :haa }, 3 => { "bla" => :yar, "table_id" => 91 }, 4 => { "table_id" => "0" })
     end
     
@@ -76,7 +76,7 @@ module Conductor::Associations
   end
   
   describe HasMany, "when initialized and run with params to update 1 item, delete 2 and add 1, " + 
-                    "with a name of 'memberships', and the option 'require_attribute' => :membership_id" do
+                    "with a name of 'memberships', and the option 'require' => :membership_id" do
     include SpecHelpers
     
     before do
@@ -85,7 +85,7 @@ module Conductor::Associations
         OpenStruct.new("membership_id" => 2), # To be updated
         OpenStruct.new("membership_id" => 9)  # To be deleted
       ]
-      @association = stub_association(:memberships, :club, @existing_records, 'require_attribute' => :membership_id)
+      @association = stub_association(:memberships, :club, @existing_records, 'require' => :membership_id)
       @existing_records.each { |r| r.club = @resource }
       
       @association.run(
