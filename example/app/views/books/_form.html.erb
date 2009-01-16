@@ -1,0 +1,40 @@
+<% form_for @book_conductor do |form| %>
+  <%= error_messages_for :book_conductor %>
+  
+  <p>
+    <%= form.label :name %><br>
+    <%= form.text_field :name %>
+  </p>
+  
+  <p>
+    <%= form.label :publisher %> (Options are <%= Publisher.find(:all).map(&:name).to_sentence %>.)<br>
+    <%= form.text_field :publisher %>
+  </p>
+  
+  <h3>Authors</h3>
+  
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Role</th>
+    </tr>
+    
+    <%- counter = 1 %>
+    <% @book_conductor.potential_authorships.each do |authorship| -%>
+      <% fields_for "book_conductor[authorships][#{counter}]", authorship do |fields| -%>
+        <tr>
+          <td>
+            <%= fields.check_box :author_id, { :checked => @book_conductor.authorships.include?(authorship) }, authorship.author_id %>
+            <%= authorship.author.name %></td>
+          </td>
+          <td>
+            <%= fields.text_field :role %>
+          </td>
+        </tr>
+      <% end -%>
+      <%- counter += 1 -%>
+    <% end -%>
+  </table>
+  
+  <p><%= form.submit %></p>
+<% end %>

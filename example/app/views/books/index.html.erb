@@ -1,0 +1,23 @@
+<h1>Books</h1>
+
+<p><%= link_to "New Book", new_book_path %></p>
+
+<% @books.each do |book| -%>
+  <h2><%=h book.name %></h2>
+  
+  <h3>Authors:</h3>
+  
+  <% unless book.authorships.empty? -%>
+    <ul>
+      <% book.authorships.each do |authorship| -%>
+        <li><%=h authorship.author.name -%>, <%=h authorship.role -%></li>
+      <% end -%>
+    </ul>
+  <% else -%>
+    <p>None</p>
+  <% end -%>
+  
+  <%= link_to "Edit", edit_book_path(book) %> |
+  <%= link_to "Delete", book_path(book), :method => :delete %>
+  <hr>
+<% end %>

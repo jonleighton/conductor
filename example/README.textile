@@ -1,0 +1,3 @@
+h1. Conductor Plugin Example App
+
+This is an example app used to show & test the conductor plugin. In the future I intend it to also be used for full-stack integration testing with Cucumber + Webrat.
