@@ -5,7 +5,7 @@ class Conductor::ActionView::FormBuilder < ActionView::Helpers::FormBuilder
     # This ensures that records held by the conductor take precedence over records in the provided
     # collection, which allows us to maintain the state of the form if there are validation errors.
     # It depends on the association records having a sensible implementation of ==
-    conductor_records = object.send(name)
+    conductor_records = object.send(name).to_a
     records = records.map do |record|
       conductor_records.find { |conductor_record| record == conductor_record } || record
     end
