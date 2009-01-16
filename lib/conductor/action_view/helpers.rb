@@ -1,7 +1,6 @@
 module Conductor::ActionView::Helpers
   def form_for_conductor(conductor, *args, &proc)
     raise ArgumentError, "Missing block" unless block_given?
-    raise ArgumentError, "Object not a conductor" unless conductor.is_a?(Conductor::Base)
     
     options = args.extract_options!
     apply_form_for_options!(conductor.resource, options)
