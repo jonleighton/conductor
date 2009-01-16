@@ -146,28 +146,4 @@ module Conductor::Associations
       @association.records.should == @conducted
     end
   end
-  
-  describe HasMany, "with some records" do
-    include SpecHelpers
-  
-    before do
-      @association = stub_association(:foo)
-      @records = [OpenStruct.new(:id => 3), OpenStruct.new(:id => 7), OpenStruct.new(:id => 2)]
-      @association.stubs(:records).returns(@records)
-    end
-    
-    it "should return a new array, using its own copies of the records where possible, when asked to merge into a superset of the records" do
-      @superset = [OpenStruct.new(:id => 15), OpenStruct.new(:id => 56), OpenStruct.new(:id => 3),
-                   OpenStruct.new(:id => 7),  OpenStruct.new(:id => 64), OpenStruct.new(:id => 2)]
-      merged = @association.merge_into(@superset)
-      
-      merged.should have(6).items
-      merged[0].should equal(@superset[0])
-      merged[1].should equal(@superset[1])
-      merged[2].should equal(@records[0])
-      merged[3].should equal(@records[1])
-      merged[4].should equal(@superset[4])
-      merged[5].should equal(@records[2])
-    end
-  end
 end

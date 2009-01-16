@@ -81,26 +81,7 @@ class Conductor::Associations::HasMany
     @new_records ||= []
   end
   
-  # The idea here is that other_records is a superset of whatever records
-  # are handled by this updater. We want to merge in the actual records
-  # held by the updater in order to preserve any changes since they were
-  # initialized. (For instance, so that we can re-render the form in exactly
-  # the state it was submitted in.)
-  def merge_into(other_records)
-    other_records.map do |other_record|
-      if has_record?(other_record)
-        find(other_record)
-      else
-        other_record
-      end
-    end
-  end
-  
   private
-    
-    def has_record?(record)
-      !find(record).nil?
-    end
     
     def find(other_record)
       records.to_a.find { |record| other_record == record }
