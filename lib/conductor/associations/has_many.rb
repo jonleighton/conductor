@@ -51,7 +51,7 @@ class Conductor::Associations::HasMany
     end
   end
   
-  def run(params)
+  def parse(params)
     @changed = true
     self.params = params
     self.params.each { |item_params| update_item(item_params) }

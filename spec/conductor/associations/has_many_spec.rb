@@ -31,12 +31,12 @@ module SpecHelpers
 end
 
 module Conductor::Associations
-  describe HasMany, "when initialized and run, with a name of 'tables', with the option :require => :table_id" do
+  describe HasMany, "when initialized and given some parameters to parse, with a name of 'tables', with the option :require => :table_id" do
     include SpecHelpers
     
     before do
       @association = stub_association(:tables, :house, [stub, stub], :require => :table_id)
-      @association.run(1 => { "foo" => :bar, "table_id" => 4 }, 2 => { "hoo" => :haa }, 3 => { "bla" => :yar, "table_id" => 91 }, 4 => { "table_id" => "0" })
+      @association.parse(1 => { "foo" => :bar, "table_id" => 4 }, 2 => { "hoo" => :haa }, 3 => { "bla" => :yar, "table_id" => 91 }, 4 => { "table_id" => "0" })
     end
     
     it "should have an array of hashes with stringified keys as the params, and items without the id attribute deleted" do
@@ -75,7 +75,7 @@ module Conductor::Associations
     end
   end
   
-  describe HasMany, "when initialized and run with params to update 1 item, delete 2 and add 1, " + 
+  describe HasMany, "when initialized and given some params to parse which update 1 item, delete 2 and add 1, " + 
                     "with a name of 'memberships', and the option 'require' => :membership_id" do
     include SpecHelpers
     
@@ -88,7 +88,7 @@ module Conductor::Associations
       @association = stub_association(:memberships, :club, @existing_records, 'require' => :membership_id)
       @existing_records.each { |r| r.club = @resource }
       
-      @association.run(
+      @association.parse(
         1 => { "membership_id" => 2 }, # Updated
         2 => { "membership_id" => 7 }  # Added
       )
@@ -125,9 +125,13 @@ module Conductor::Associations
       @association.records.each { |record| record.expects(:save!) }
       @association.save!
     end
+    
+    it "should be changed" do
+      @association.should be_changed
+    end
   end
   
-  describe HasMany, "when initialized by not yet run" do
+  describe HasMany, "when initialized but not having parsed any params" do
     include SpecHelpers
   
     before do
@@ -140,19 +144,6 @@ module Conductor::Associations
     
     it "should return the conducted object when asked for the records" do
       @association.records.should == @conducted
-    end
-  end
-  
-  describe HasMany, "when initialized and run" do
-    include SpecHelpers
-    
-    before do
-      @association = stub_association(:foo)
-      @association.run({})
-    end
-    
-    it "should be changed" do
-      @association.should be_changed
     end
   end
   
