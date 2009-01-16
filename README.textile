@@ -23,7 +23,7 @@ However:
 
 * There is almost 100% RSpec coverage
 * It has been used and developed on a large, real-world project which has received extensive testing
-* An "example app":http://github.com/jonleighton/conductor_example/tree available is for inspection
+* An "example app":http://github.com/jonleighton/conductor/tree/master/example available is for inspection
 
 The current focus is to improve the documentation and allow this to drive API changes so the plugin can be more easily understood.
 
