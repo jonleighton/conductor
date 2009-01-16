@@ -10,8 +10,10 @@ class Conductor::ActionView::FormBuilder < ActionView::Helpers::FormBuilder
       conductor_records.find { |conductor_record| record == conductor_record } || record
     end
     
+    options = { :builder => Conductor::ActionView::CollectionFormBuilder, :collection => conductor_records }
+    
     records.each_with_index do |item, i|
-      @template.fields_for("#{object_name}[#{name}][#{i}]", item) do |fields|
+      @template.fields_for("#{object_name}[#{name}][#{i}]", item, options) do |fields|
         yield fields, item
       end
     end

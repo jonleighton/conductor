@@ -22,7 +22,7 @@
     <% form.fields_for_collection(:authorships, @book.potential_authorships) do |fields, authorship| -%>
       <tr>
         <td>
-          <%= fields.check_box :author_id, { :checked => @book_conductor.authorships.include?(authorship) }, authorship.author_id %>
+          <%= fields.inclusion_check_box :author_id %>
           <%= fields.label :author_id, authorship.author_name %>
         </td>
         <td>
