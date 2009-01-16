@@ -1,5 +1,9 @@
 require "active_support/callbacks"
-require "conductor/associations/has_many"
+require "conductor/conductor_invalid"
+
+module Conductor::Associations
+  require "conductor/associations/has_many"
+end
 
 class Conductor::Base
   class << self

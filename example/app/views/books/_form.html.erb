@@ -1,4 +1,4 @@
-<% form_for @book_conductor do |form| %>
+<% form_for_conductor @book_conductor do |form| %>
   <%= error_messages_for :book_conductor %>
   
   <p>
@@ -33,6 +33,18 @@
         </tr>
       <% end -%>
       <%- counter += 1 -%>
+    <% end -%>
+    
+    <% form.collection_fields_for :authorships do |fields, authorship| -%>
+      <tr>
+        <td>
+          <%= fields.check_box :author_id %>
+          <%= fields.label :author_id, authorship.author_name %>
+        </td>
+        <td>
+          <%= fields.text_field :role %>
+        </td>
+      </tr>
     <% end -%>
   </table>
   
