@@ -1,5 +1,5 @@
 class Conductor::ActionView::FormBuilder < ActionView::Helpers::FormBuilder
-  def fields_for_association(name, records)
+  def fields_for_collection(name, records)
     raise ArgumentError, "No block given" unless block_given?
     
     # This ensures that records held by the conductor take precedence over records in the provided
