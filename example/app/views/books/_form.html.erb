@@ -19,26 +19,10 @@
       <th>Role</th>
     </tr>
     
-    <%- counter = 1 %>
-    <% @book_conductor.potential_authorships.each do |authorship| -%>
-      <% fields_for "book_conductor[authorships][#{counter}]", authorship do |fields| -%>
-        <tr>
-          <td>
-            <%= fields.check_box :author_id, { :checked => @book_conductor.authorships.include?(authorship) }, authorship.author_id %>
-            <%= authorship.author.name %></td>
-          </td>
-          <td>
-            <%= fields.text_field :role %>
-          </td>
-        </tr>
-      <% end -%>
-      <%- counter += 1 -%>
-    <% end -%>
-    
-    <% form.collection_fields_for :authorships do |fields, authorship| -%>
+    <% form.fields_for_association(:authorships, @book.potential_authorships) do |fields, authorship| -%>
       <tr>
         <td>
-          <%= fields.check_box :author_id %>
+          <%= fields.check_box :author_id, { :checked => @book_conductor.authorships.include?(authorship) }, authorship.author_id %>
           <%= fields.label :author_id, authorship.author_name %>
         </td>
         <td>

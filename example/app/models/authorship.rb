@@ -2,8 +2,6 @@ class Authorship < ActiveRecord::Base
   belongs_to :book
   belongs_to :author
   
-  delegate :name, :to => :author, :prefix => true
-  
   validate :validate_presence_of_role
   
   def self.from_authors(*authors)
@@ -16,6 +14,10 @@ class Authorship < ActiveRecord::Base
   
   def ==(other)
     other.book_id == book_id && other.author_id == author_id
+  end
+  
+  def author_name
+    author.name
   end
   
   private
