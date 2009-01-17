@@ -14,7 +14,7 @@ module Conductor::ActionView
         lambda { @builder.fields_for_collection(:foo, [stub, stub]) }.should raise_error(ArgumentError)
       end
       
-      it "merge the provided records with the records from the association with the given name " +
+      it "should merge the provided records with the records from the association with the given name " +
          "and then iterate those records yielding a fields block for each one which uses the CollectionFormBuilder" do
         conductor_records = [OpenStruct.new(:id => 3), OpenStruct.new(:id => 7)]
         records = [OpenStruct.new(:id => 1), OpenStruct.new(:id => 3), OpenStruct.new(:id => 6), OpenStruct.new(:id => 7)]
