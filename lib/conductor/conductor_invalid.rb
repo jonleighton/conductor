@@ -7,7 +7,7 @@ module Conductor
     end
     
     def record
-      conductor.resource
+      conductor.record
     end
   end
 end

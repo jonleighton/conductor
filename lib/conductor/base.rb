@@ -18,8 +18,8 @@ class Conductor::Base
     end
     
     def method_missing(method_name, *args)
-      if resource_class.respond_to?(method_name)
-        resource_class.send(method_name, *args)
+      if record_class.respond_to?(method_name)
+        record_class.send(method_name, *args)
       else
         raise NoMethodError.new("undefined method `#{method_name}' for #{self}", method_name, *args)
       end
@@ -27,18 +27,18 @@ class Conductor::Base
     
     private
     
-      def resource_class
+      def record_class
         self.name.sub(/Conductor$/, "").constantize
       end
   end
   
-  attr_reader :resource, :associations
+  attr_reader :record, :associations
   
-  delegate :id, :to => :resource
-  delegate :connection, :to => "resource.class"
+  delegate :id, :to => :record
+  delegate :connection, :to => "record.class"
   
-  def initialize(resource)
-    @resource = resource
+  def initialize(record)
+    @record = record
     @associations = self.class.associations.map { |association| association.instantiate_instance(self) }
   end
   
@@ -60,27 +60,27 @@ class Conductor::Base
   #   be deferrable. It will be satisfied by the end of the transaction, but
   #   not when the association is initially saved.
   def save
-    resource.class.transaction do
+    record.class.transaction do
       run_callbacks(:before_save)
       
-      if resource.new_record?
+      if record.new_record?
         defer_constraints
-        resource.id = next_id
+        record.id = next_id
         associations.each(&:set_foreign_keys)
       end
       
       associations.each(&:save!)
-      resource.save!
+      record.save!
       
       run_callbacks(:after_save)
     end
     true
   rescue ActiveRecord::RecordInvalid
-    resource.id = nil if resource.new_record?
+    record.id = nil if record.new_record?
     associations.each do |association|
       association.records.each(&:valid?)
     end
-    resource.valid?
+    record.valid?
     false
   end
   
@@ -89,7 +89,7 @@ class Conductor::Base
   end
   
   # Iterate each of the attributes, if there is a setter defined on this updater
-  # for it then use that, then just mass assign the rest to the resource
+  # for it then use that, then just mass assign the rest to the record
   def attributes=(params)
     params = params.nil? ? {} : params.clone
     params.each do |attribute, value|
@@ -98,7 +98,7 @@ class Conductor::Base
         params.delete(attribute)
       end
     end
-    resource.attributes = params
+    record.attributes = params
   end
   
   def update_attributes(params)
@@ -114,7 +114,7 @@ class Conductor::Base
   # add their errors to the base errors object
   def errors
     unless @errors
-      @errors = resource.errors.dup
+      @errors = record.errors.dup
       associations.each do |association|
         association.records.each do |record|
           record.errors.each_full do |message|
@@ -127,8 +127,8 @@ class Conductor::Base
   end
   
   def method_missing(method_name, *args)
-    if resource.respond_to?(method_name)
-      resource.send(method_name, *args)
+    if record.respond_to?(method_name)
+      record.send(method_name, *args)
     else
       raise NoMethodError.new("undefined method `#{method_name}' for #{self}", method_name, *args)
     end
@@ -141,6 +141,6 @@ class Conductor::Base
     end
     
     def next_id
-      connection.select_rows("SELECT nextval('#{resource.class.sequence_name}');")[0][0].to_i
+      connection.select_rows("SELECT nextval('#{record.class.sequence_name}');")[0][0].to_i
     end
 end

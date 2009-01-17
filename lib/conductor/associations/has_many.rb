@@ -8,7 +8,7 @@ class Conductor::Associations::HasMany
     @original_records = records.clone
   end
   
-  delegate :resource, :to => :conductor
+  delegate :base_record, :to => :conductor
   delegate :primary_key_name, :to => :reflection
   
   def params=(new_params)
@@ -37,15 +37,15 @@ class Conductor::Associations::HasMany
   end
   
   def reflection
-    @reflection ||= resource.class.reflect_on_association(name.to_sym)
+    @reflection ||= base_record.class.reflect_on_association(name.to_sym)
   end
   
-  # Called from Conductor::Base#save! This is necessary because when the resource is a new record
+  # Called from Conductor::Base#save! This is necessary because when the base_record is a new record
   # the foreign key won't be automatically assigned in update_item.
   def set_foreign_keys
     records.each do |record|
       if record.send(primary_key_name).nil?
-        record.send("#{primary_key_name}=", resource.id)
+        record.send("#{primary_key_name}=", base_record.id)
       end
     end
   end
@@ -57,7 +57,7 @@ class Conductor::Associations::HasMany
   end
     
   def association_proxy
-    resource.send(name)
+    base_record.send(name)
   end
   
   def records
@@ -92,7 +92,7 @@ class Conductor::Associations::HasMany
     
     def update_item(params)
       new_record = association_proxy.build(params)
-      new_record.send("#{primary_key_name.sub(/_id$/, '')}=", resource) # FIXME: This won't work with custom primary keys
+      new_record.send("#{primary_key_name.sub(/_id$/, '')}=", base_record) # FIXME: This won't work with custom primary keys
       
       if original_record?(new_record)
         # Use the record that already exists, rather than the new one We do

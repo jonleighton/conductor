@@ -3,10 +3,10 @@ module Conductor::ActionView::Helper
     raise ArgumentError, "Missing block" unless block_given?
     
     options = args.extract_options!
-    apply_form_for_options!(conductor.resource, options)
+    apply_form_for_options!(conductor.record, options)
     options.merge!(:builder => Conductor::ActionView::FormBuilder)
     
-    object_name = ActionController::RecordIdentifier.singular_class_name(conductor.resource)
+    object_name = ActionController::RecordIdentifier.singular_class_name(conductor.record)
     
     concat(form_tag(options.delete(:url) || {}, options.delete(:html) || {}), proc.binding)
     fields_for(object_name, conductor, *(args << options), &proc)

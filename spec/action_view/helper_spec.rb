@@ -11,8 +11,8 @@ module Conductor::ActionView
     
     describe "#form_for_conductor" do
       before do
-        @conductor = stub_everything(:resource => stub_everything)
-        ActionController::RecordIdentifier.stubs(:singular_class_name).with(@conductor.resource).returns("time_warp")
+        @conductor = stub_everything(:record => stub_everything)
+        ActionController::RecordIdentifier.stubs(:singular_class_name).with(@conductor.record).returns("time_warp")
       end
     
       it "should raise an ArgumentError if there is no block" do
@@ -20,10 +20,10 @@ module Conductor::ActionView
       end
       
       it "should create a form using Conductor::ActionView::FormBuilder, " +
-         "which uses the conductor as the object, but the conductor's resource for the object name" do
+         "which uses the conductor as the object, but the conductor's record for the object name" do
         original_options = { :url => "/jump/to/the/left", :step_to => :the_right }
         fields_for_options = { :step_to => :the_right, :builder => Conductor::ActionView::FormBuilder }
-        @helper.expects(:apply_form_for_options!).with(@conductor.resource, original_options)
+        @helper.expects(:apply_form_for_options!).with(@conductor.record, original_options)
         
         @helper.stubs(:form_tag).with("/jump/to/the/left", {}).returns(form_tag = stub)
         

@@ -19,12 +19,12 @@ class DummyAssociationProxy < Array
   end
 end
 
-def stub_association(name, resource_name = :idontfuckingcare, association_records = [], options = {})
+def stub_association(name, base_record_name = :idontfuckingcare, association_records = [], options = {})
   @association_proxy = DummyAssociationProxy.new(association_records)
-  @resource = stub_everything(name => @association_proxy, :class => stub_everything)
-  @reflection = stub_everything(:primary_key_name => resource_name.to_s.singularize.foreign_key)
-  @resource.class.stubs(:reflect_on_association).with(name).returns(@reflection)
-  @conductor = stub_everything(:resource => @resource)
+  @base_record = stub_everything(name => @association_proxy, :class => stub_everything)
+  @reflection = stub_everything(:primary_key_name => base_record_name.to_s.singularize.foreign_key)
+  @base_record.class.stubs(:reflect_on_association).with(name).returns(@reflection)
+  @conductor = stub_everything(:base_record => @base_record)
   Conductor::Associations::HasMany.new(@conductor, name, options)
 end
 
@@ -44,27 +44,27 @@ module Conductor::Associations
     end
     
     it "should store the original records as a clone of the association proxy's array" do
-      original = @resource.tables.clone
-      @resource.tables << "lll"
+      original = @base_record.tables.clone
+      @base_record.tables << "lll"
       @association.original_records.should == original
     end
     
-    it "should allow the resource to be accessed as an attribute" do
-      @association.resource.should == @resource
+    it "should allow the base_record to be accessed as an attribute" do
+      @association.base_record.should == @base_record
     end
     
     it "should have a name of 'tables'" do
       @association.name.should == "tables"
     end
     
-    it "should return the reflection from the resource's class of the 'tables' association, when asked for the reflection" do
+    it "should return the reflection from the base_record's class of the 'tables' association, when asked for the reflection" do
       @association.reflection.should == @reflection
     end
     
-    it "should set, on all records where it is nil, the primary_key_name specified by the reflection to the resource's id, " +
+    it "should set, on all records where it is nil, the primary_key_name specified by the reflection to the base_record's id, " +
        "when asked to set the foreign keys" do
       @association.stubs(:records).returns(records = [stub(:house_id => 60), stub(:house_id => nil), stub(:house_id => nil)])
-      @resource.stubs(:id).returns(60)
+      @base_record.stubs(:id).returns(60)
       records[1].expects(:house_id=).with(60)
       records[2].expects(:house_id=).with(60)
       @association.set_foreign_keys
@@ -80,7 +80,7 @@ module Conductor::Associations
         OpenStruct.new("membership_id" => 9)  # To be deleted
       ]
       @association = stub_association(:memberships, :club, @existing_records, 'require' => :membership_id)
-      @existing_records.each { |r| r.club = @resource }
+      @existing_records.each { |r| r.club = @base_record }
       
       @association.parse(
         1 => { "membership_id" => 2 }, # Updated
@@ -102,8 +102,8 @@ module Conductor::Associations
       @association.new_records[0].membership_id.should == 7
     end
     
-    it "should assign the association to the resource on each of the new records" do
-      @association.new_records[0].club.should == @resource
+    it "should assign the association to the base_record on each of the new records" do
+      @association.new_records[0].club.should == @base_record
     end
     
     it "should have a list of records equal to the updated records plus the new records" do
@@ -111,7 +111,7 @@ module Conductor::Associations
     end
     
     it "should delete all the deleted records when asked to save!" do
-      @resource.memberships.expects(:delete).with(@association_proxy[0], @association_proxy[2])
+      @base_record.memberships.expects(:delete).with(@association_proxy[0], @association_proxy[2])
       @association.save!
     end
     

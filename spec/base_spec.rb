@@ -46,21 +46,21 @@ describe Conductor::Base, "when conducting for a Task" do
   end
 end
 
-describe Conductor::Base, "with a resource, with a has_many :memberships association" do
+describe Conductor::Base, "with a record, with a has_many :memberships association" do
   before do
     @memberships = [stub_everything, stub_everything, stub_everything]
-    @resource = stub_everything(:memberships => @people, :class => stub)
-    @resource.class.stubs(:transaction).yields
-    @conductor = Conductor::Base.new(@resource)
+    @record = stub_everything(:memberships => @people, :class => stub)
+    @record.class.stubs(:transaction).yields
+    @conductor = Conductor::Base.new(@record)
     (class << @conductor; self; end).has_many :memberships, :require_attribute => :member_id
   end
   
-  it "should make the resource available as an attribute" do
-    @conductor.resource.should == @resource
+  it "should make the record available as an attribute" do
+    @conductor.record.should == @record
   end
   
-  it "should update the standard params on the resource when new attributes are assigned" do
-    @resource.expects(:attributes=).with(:mordor => "evil", :shire => "stoners", :rivendell => "tall")
+  it "should update the standard params on the record when new attributes are assigned" do
+    @record.expects(:attributes=).with(:mordor => "evil", :shire => "stoners", :rivendell => "tall")
     @conductor.stubs(:memberships=)
     @conductor.attributes = { :mordor => "evil", :memberships => :bla, :shire => "stoners", :rivendell => "tall" }
   end
@@ -108,12 +108,12 @@ describe Conductor::Base, "with a resource, with a has_many :memberships associa
   end
 end
 
-describe Conductor::Base, "when all the associations and the resource are able to save!" do
+describe Conductor::Base, "when all the associations and the record are able to save!" do
   before do
-    @resource = stub_everything(:class => stub_everything(:sequence_name => "the_sequence"), :save! => true)
-    @resource.class.stubs(:transaction).yields
+    @record = stub_everything(:class => stub_everything(:sequence_name => "the_sequence"), :save! => true)
+    @record.class.stubs(:transaction).yields
     
-    @conductor = Conductor::Base.new(@resource)
+    @conductor = Conductor::Base.new(@record)
     @conductor.associations << stub_everything(:save! => true) << stub_everything(:save! => true)
     
     @connection = stub_everything
@@ -121,7 +121,7 @@ describe Conductor::Base, "when all the associations and the resource are able t
   end
   
   it "should start a transaction when saved" do
-    @resource.class.expects(:transaction).yields
+    @record.class.expects(:transaction).yields
     @conductor.save
   end
   
@@ -133,37 +133,37 @@ describe Conductor::Base, "when all the associations and the resource are able t
     @conductor.save!.should == true
   end
 
-  describe "and the resource is a new record" do
+  describe "and the record is a new record" do
     before do
-      @resource.stubs(:new_record?).returns(true)
+      @record.stubs(:new_record?).returns(true)
       @connection.stubs(:select_rows).with("SELECT nextval('the_sequence');").returns([["142"]]);
     end
     
     it "should run the before_save callback, defer the constraints, set the record's id, set the foreign keys on the associations, " +
-       "save! the associations, save! the resource, then run the after_save callback, when saved" do
+       "save! the associations, save! the record, then run the after_save callback, when saved" do
       save = sequence("save")
       @conductor.expects(:run_callbacks).with(:before_save).in_sequence(save)
       @connection.expects(:execute).with("SET CONSTRAINTS ALL DEFERRED;").in_sequence(save)
-      @resource.expects(:id=).with(142).in_sequence(save)
+      @record.expects(:id=).with(142).in_sequence(save)
       @conductor.associations.each { |a| a.expects(:set_foreign_keys).in_sequence(save) }
       @conductor.associations.each { |a| a.expects(:save!).in_sequence(save) }
-      @resource.expects(:save!).in_sequence(save)
+      @record.expects(:save!).in_sequence(save)
       @conductor.expects(:run_callbacks).with(:after_save).in_sequence(save)
       
       @conductor.save
     end
   end
   
-  describe "and the resource is not a new record" do
+  describe "and the record is not a new record" do
     before do
-      @resource.stubs(:new_record?).returns(false)
+      @record.stubs(:new_record?).returns(false)
     end
   
-    it "should run the before_save callback, save! the associations, save! the resource, then run the after_save callback, when saved" do
+    it "should run the before_save callback, save! the associations, save! the record, then run the after_save callback, when saved" do
       save = sequence("save")
       @conductor.expects(:run_callbacks).with(:before_save).in_sequence(save)
       @conductor.associations.each { |a| a.expects(:save!).in_sequence(save) }
-      @resource.expects(:save!).in_sequence(save)
+      @record.expects(:save!).in_sequence(save)
       @conductor.expects(:run_callbacks).with(:after_save).in_sequence(save)
       
       @conductor.save
@@ -171,13 +171,13 @@ describe Conductor::Base, "when all the associations and the resource are able t
   end
 end
 
-describe Conductor::Base, "when the resource is not able to save!" do
+describe Conductor::Base, "when the record is not able to save!" do
   before do
-    @resource = stub_everything(:class => stub_everything(:sequence_name => "the_sequence"), :errors => stub_everything(:full_messages => stub_everything))
-    @resource.stubs(:save!).raises(ActiveRecord::RecordInvalid.new(@resource))
-    @resource.class.stubs(:transaction).yields
+    @record = stub_everything(:class => stub_everything(:sequence_name => "the_sequence"), :errors => stub_everything(:full_messages => stub_everything))
+    @record.stubs(:save!).raises(ActiveRecord::RecordInvalid.new(@record))
+    @record.class.stubs(:transaction).yields
     
-    @conductor = Conductor::Base.new(@resource)
+    @conductor = Conductor::Base.new(@record)
     @conductor.associations << stub_everything(:save! => true) << stub_everything(:save! => true)
     @conductor.associations.each do |association|
       association.stubs(:records).returns([])
@@ -192,8 +192,8 @@ describe Conductor::Base, "when the resource is not able to save!" do
     @conductor.save.should == false
   end
   
-  it "should call valid? for the resource and all of the records in the association" do
-    @resource.expects(:valid?)
+  it "should call valid? for the record and all of the records in the association" do
+    @record.expects(:valid?)
     @conductor.associations.each do |association|
       association.records.each do |record|
         record.expects(:valid?)
@@ -210,34 +210,34 @@ describe Conductor::Base, "when the resource is not able to save!" do
     end
   end
   
-  describe "and the resource is a new record" do
+  describe "and the record is a new record" do
     before do
-      @resource.stubs(:new_record?).returns(true)
+      @record.stubs(:new_record?).returns(true)
       @connection.stubs(:select_rows).with("SELECT nextval('the_sequence');").returns([["142"]]);
     end
     
     it "should set the id of the record back to nil when saved" do
-      @resource.expects(:id=).with(nil)
+      @record.expects(:id=).with(nil)
       @conductor.save
     end
   end
 end
 
-describe Conductor::Base, "with a resource which responds to 'name' and 'age=', and has an id of 56" do
+describe Conductor::Base, "with a record which responds to 'name' and 'age=', and has an id of 56" do
   before do
-    @resource = stub_everything(:id => 56)
-    @conductor = Conductor::Base.new(@resource)
+    @record = stub_everything(:id => 56)
+    @conductor = Conductor::Base.new(@record)
   end
   
-  it "should call the resource's name method when asked for the name" do
-    @resource.stubs(:respond_to?).with(:name).returns(true)
-    @resource.expects(:name).returns(name = stub)
+  it "should call the record's name method when asked for the name" do
+    @record.stubs(:respond_to?).with(:name).returns(true)
+    @record.expects(:name).returns(name = stub)
     @conductor.name.should == name
   end
   
-  it "should assign to the resource's age when the age is assigned to" do
-    @resource.stubs(:respond_to?).with(:age=).returns(true)
-    @resource.expects(:age=).with(73)
+  it "should assign to the record's age when the age is assigned to" do
+    @record.stubs(:respond_to?).with(:age=).returns(true)
+    @record.expects(:age=).with(73)
     @conductor.age = 73
   end
   
@@ -250,11 +250,11 @@ describe Conductor::Base, "with a resource which responds to 'name' and 'age=', 
   end
 end
 
-describe Conductor::Base, "when the resource has error, and one of the records in an association has an error" do
+describe Conductor::Base, "when the record has error, and one of the records in an association has an error" do
   before do
-    @resource = stub_everything
-    @resource.stubs(:errors).returns(ActiveRecord::Errors.new(@resource))
-    @resource.errors.add_to_base "Foo is totally wrong!"
+    @record = stub_everything
+    @record.stubs(:errors).returns(ActiveRecord::Errors.new(@record))
+    @record.errors.add_to_base "Foo is totally wrong!"
     
     @error_record = stub_everything
     @error_record.stubs(:errors).returns(ActiveRecord::Errors.new(@error_record))
@@ -263,11 +263,11 @@ describe Conductor::Base, "when the resource has error, and one of the records i
     @ok_record = stub_everything(:errors => stub_everything(:each_full => []))
     @association = stub_everything(:records => [@ok_record.dup, @ok_record.dup, @error_record, @ok_record.dup])
     
-    @conductor = Conductor::Base.new(@resource)
+    @conductor = Conductor::Base.new(@record)
     @conductor.stubs(:associations).returns([@association])
   end
   
-  it "should aggregate all the errors from the resource and the records in the associations" do
+  it "should aggregate all the errors from the record and the records in the associations" do
     errors = @conductor.errors.full_messages
     errors.length.should == 2
     errors.should include("Foo is totally wrong!")
