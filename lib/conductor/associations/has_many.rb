@@ -83,10 +83,6 @@ class Conductor::Associations::HasMany
   
   private
     
-    def find(other_record)
-      records.to_a.find { |record| other_record == record }
-    end
-    
     def original_record?(record)
       !find_original(record).nil?
     end
