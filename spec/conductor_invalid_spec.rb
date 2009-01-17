@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/../spec_helper"
+require File.dirname(__FILE__) + "/spec_helper"
 
 describe Conductor::ConductorInvalid, "when initialized with a conductor" do
   before do
