@@ -5,7 +5,7 @@ class Conductor::Associations::HasMany
   
   def initialize(conductor, name, options = {})
     @conductor, @name, @options = conductor, name.to_s, options.symbolize_keys!
-    @original_records = conducted.to_a.clone
+    @original_records = records.clone
   end
   
   delegate :resource, :to => :conductor
@@ -32,7 +32,7 @@ class Conductor::Associations::HasMany
   end
   
   def save!
-    conducted.delete(*deleted_records)
+    association_proxy.delete(*deleted_records)
     records.each(&:save!)
   end
   
@@ -40,9 +40,8 @@ class Conductor::Associations::HasMany
     @reflection ||= resource.class.reflect_on_association(name.to_sym)
   end
   
-  # This is necessary because when the resource is a new record the foreign key won't
-  # be automatically assigned in update_item. However, it should probably be invoked
-  # in save!, rather than relying in the Conductor::Base to invoke it.
+  # Called from Conductor::Base#save! This is necessary because when the resource is a new record
+  # the foreign key won't be automatically assigned in update_item.
   def set_foreign_keys
     records.each do |record|
       if record.send(primary_key_name).nil?
@@ -57,7 +56,7 @@ class Conductor::Associations::HasMany
     self.params.each { |item_params| update_item(item_params) }
   end
     
-  def conducted
+  def association_proxy
     resource.send(name)
   end
   
@@ -65,7 +64,7 @@ class Conductor::Associations::HasMany
     if changed?
       updated_records + new_records
     else
-      conducted
+      association_proxy.to_a
     end
   end
   
@@ -92,13 +91,13 @@ class Conductor::Associations::HasMany
     end
     
     def update_item(params)
-      new_record = conducted.build(params)
+      new_record = association_proxy.build(params)
       new_record.send("#{primary_key_name.sub(/_id$/, '')}=", resource) # FIXME: This won't work with custom primary keys
       
       if original_record?(new_record)
         # Use the record that already exists, rather than the new one We do
         # the deletion using eql? because == might delete the existing one
-        conducted.delete_if { |record| record.equal?(new_record) }
+        association_proxy.delete_if { |record| record.equal?(new_record) }
         updated_record = find_original(new_record)
         updated_record.attributes = params
         

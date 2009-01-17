@@ -9,7 +9,7 @@ class DummyActiveRecord < OpenStruct
   end
 end
 
-class DummyAssociationCollection < Array
+class DummyAssociationProxy < Array
   def build(params = {})
     DummyActiveRecord.new(params)
   end
@@ -19,21 +19,17 @@ class DummyAssociationCollection < Array
   end
 end
 
-module SpecHelpers
-  def stub_association(conducted_name, resource_name = :idontfuckingcare, conducted_records = [], options = {})
-    @conducted = DummyAssociationCollection.new(conducted_records)
-    @resource = stub_everything(conducted_name => @conducted, :class => stub_everything)
-    @reflection = stub_everything(:primary_key_name => resource_name.to_s.singularize.foreign_key)
-    @resource.class.stubs(:reflect_on_association).with(conducted_name).returns(@reflection)
-    @conductor = stub_everything(:resource => @resource)
-    Conductor::Associations::HasMany.new(@conductor, conducted_name, options)
-  end
+def stub_association(name, resource_name = :idontfuckingcare, association_records = [], options = {})
+  @association_proxy = DummyAssociationProxy.new(association_records)
+  @resource = stub_everything(name => @association_proxy, :class => stub_everything)
+  @reflection = stub_everything(:primary_key_name => resource_name.to_s.singularize.foreign_key)
+  @resource.class.stubs(:reflect_on_association).with(name).returns(@reflection)
+  @conductor = stub_everything(:resource => @resource)
+  Conductor::Associations::HasMany.new(@conductor, name, options)
 end
 
 module Conductor::Associations
   describe HasMany, "when initialized and given some parameters to parse, with a name of 'tables', with the option :require => :table_id" do
-    include SpecHelpers
-    
     before do
       @association = stub_association(:tables, :house, [stub, stub], :require => :table_id)
       @association.parse(1 => { "foo" => :bar, "table_id" => 4 }, 2 => { "hoo" => :haa }, 3 => { "bla" => :yar, "table_id" => 91 }, 4 => { "table_id" => "0" })
@@ -47,7 +43,7 @@ module Conductor::Associations
       @association.conductor.should == @conductor
     end
     
-    it "should store the original records as a clone of the conducted item" do
+    it "should store the original records as a clone of the association proxy's array" do
       original = @resource.tables.clone
       @resource.tables << "lll"
       @association.original_records.should == original
@@ -77,8 +73,6 @@ module Conductor::Associations
   
   describe HasMany, "when initialized and given some params to parse which update 1 item, delete 2 and add 1, " + 
                     "with a name of 'memberships', and the option 'require' => :membership_id" do
-    include SpecHelpers
-    
     before do
       @existing_records = [
         OpenStruct.new("membership_id" => 6), # To be deleted
@@ -95,12 +89,12 @@ module Conductor::Associations
     end
     
     it "should have a list of deleted records" do
-      @association.deleted_records.should == [@conducted[0], @conducted[2]]
+      @association.deleted_records.should == [@association_proxy[0], @association_proxy[2]]
     end
     
     it "should have a list of updated records, containing exactly the same objects from the original list of records" do
       @association.updated_records.should have(1).item
-      @association.updated_records[0].should equal(@conducted[1])
+      @association.updated_records[0].should equal(@association_proxy[1])
     end
     
     it "should have a list of new records containing objects build from the params" do
@@ -117,7 +111,7 @@ module Conductor::Associations
     end
     
     it "should delete all the deleted records when asked to save!" do
-      @resource.memberships.expects(:delete).with(@conducted[0], @conducted[2])
+      @resource.memberships.expects(:delete).with(@association_proxy[0], @association_proxy[2])
       @association.save!
     end
     
@@ -132,8 +126,6 @@ module Conductor::Associations
   end
   
   describe HasMany, "when initialized but not having parsed any params" do
-    include SpecHelpers
-  
     before do
       @association = stub_association(:chairs)
     end
@@ -142,8 +134,9 @@ module Conductor::Associations
       @association.should_not be_changed
     end
     
-    it "should return the conducted object when asked for the records" do
-      @association.records.should == @conducted
+    it "should return the association proxy converted to an array when asked for the records" do
+      @association.records.should == @association_proxy
+      @association.records.should be_instance_of(Array)
     end
   end
 end
