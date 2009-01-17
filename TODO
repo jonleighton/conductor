@@ -1,4 +1,11 @@
-* Get rid of vendor/active_support/callbacks and depend on Rails >= 2.1 instead
-* "Updater" is a really bad name - think of something which more accurately describes this class
-* Write some helpers to make the necessary view code cleaner
-* If we are conducting a habtm association or a through association with no fields on the join model, it should be possible to use a simplified syntax. I.e. has_and_belongs_to_many :tags would allow @conductor.tag_ids = [3, 5, 1] to be managed
+In this order:
+
+* Implement the ideas in the "wishlist" branch
+* Get rid of vendor/active_support/callbacks and use Rails' version instead
+* Move to Rails 2.2
+* Do a bit of a code review, see if the tests could be made any simpler
+* Make loads and loads of comments throughout the code, particular in the example app
+* Write a good, simple tutorial
+* Make a screencast, based on the tutorial
+* Release a 0.1 version with a gem, rdoc and a straightforward web page
+* Try to promote the plugin a bit and get other developers interested
