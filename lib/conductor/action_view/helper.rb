@@ -1,4 +1,4 @@
-module Conductor::ActionView::Helpers
+module Conductor::ActionView::Helper
   def form_for_conductor(conductor, *args, &proc)
     raise ArgumentError, "Missing block" unless block_given?
     

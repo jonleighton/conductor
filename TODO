@@ -1,4 +1,4 @@
-In this order:
+For a 0.1 version:
 
 * Implement the ideas in the "wishlist" branch
 * Get rid of vendor/active_support/callbacks and use Rails' version instead
@@ -9,3 +9,7 @@ In this order:
 * Make a screencast, based on the tutorial
 * Release a 0.1 version with a gem, rdoc and a straightforward web page
 * Try to promote the plugin a bit and get other developers interested
+
+Future:
+
+* Implement integration testing using Cucumber to test the example app
