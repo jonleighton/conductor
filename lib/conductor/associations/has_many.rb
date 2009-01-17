@@ -1,30 +1,27 @@
 class Conductor::Associations::HasMany
   require "conductor/associations/has_many_builder"
   
-  attr_reader :conductor, :name, :params, :original_records, :options
+  attr_reader :conductor, :name, :parameters, :original_records, :options
   
   def initialize(conductor, name, options = {})
-    @conductor, @name, @options = conductor, name.to_s, options.symbolize_keys!
-    @original_records = records.clone
+    @conductor        = conductor
+    @name             = name.to_s
+    @options          = options.symbolize_keys!
+    @original_records = proxy.to_a
   end
   
-  delegate :base_record, :to => :conductor
   delegate :primary_key_name, :to => :reflection
   
-  def params=(new_params)
-    # The keys only serve to group fields together, so we can drop them at this point
-    new_params = new_params.values
-    
-    # Delete any params which don't have the required attribute
-    if options[:require]
-      required_attr = options[:require].to_s
-      new_params.delete_if do |item_params|
-        item_params[required_attr].blank? ||
-        item_params[required_attr] == "0"
-      end
-    end
-    
-    @params = new_params
+  def base_record
+    conductor.record
+  end
+  
+  def proxy
+    base_record && base_record.send(name)
+  end
+  
+  def reflection
+    @reflection ||= base_record.class.reflect_on_association(name.to_sym)
   end
   
   def changed?
@@ -32,12 +29,46 @@ class Conductor::Associations::HasMany
   end
   
   def save!
-    association_proxy.delete(*deleted_records)
+    proxy.delete(*deleted_records)
     records.each(&:save!)
   end
   
-  def reflection
-    @reflection ||= base_record.class.reflect_on_association(name.to_sym)
+  def parse(parameters)
+    @parameters = parameters.values # The keys only serve to group fields in the request, so we can drop them at this point
+    remove_null_parameters
+    
+    @parameters.each do |record_parameters|
+      record_parameters.symbolize_keys!
+      
+      if record_parameters[:id].blank?
+        build_record(record_parameters)
+      else
+        update_record(record_parameters)
+      end
+    end
+    
+    @changed = true
+    @parameters
+  end
+  
+  def records
+    if changed?
+      updated_records + new_records
+    else
+      original_records
+    end
+  end
+  
+  def new_records
+    @new_records ||= []
+  end
+  
+  def updated_records
+    @updated_records ||= []
+  end
+  
+  def deleted_records
+    original_records.reject { |record| records.include?(record) }
   end
   
   # Called from Conductor::Base#save! This is necessary because when the base_record is a new record
@@ -50,60 +81,45 @@ class Conductor::Associations::HasMany
     end
   end
   
-  def parse(params)
-    @changed = true
-    self.params = params
-    self.params.each { |item_params| update_item(item_params) }
-  end
-    
-  def association_proxy
-    base_record.send(name)
+  # TODO: Individual test
+  def find(id)
+    records.find { |record| record.id == id }
   end
   
-  def records
-    if changed?
-      updated_records + new_records
-    else
-      association_proxy.to_a
-    end
+  # TODO: Individual test
+  def required_key
+    options[:require] && options[:require].to_s
   end
   
-  def deleted_records
-    original_records.reject { |item| records.include? item }
-  end
-  
-  def updated_records
-    @updated_records ||= []
-  end
-  
-  def new_records
-    @new_records ||= []
+  # TODO: Individual test
+  def has_key_requirement?
+    !required_key.nil?
   end
   
   private
     
-    def original_record?(record)
-      !find_original(record).nil?
+    def build_record(parameters)
+      record = proxy.build(parameters)
+      record.attributes = parameters
+      new_records << record
     end
     
-    def find_original(record)
-      original_records.to_a.find { |original_record| original_record == record }
-    end
-    
-    def update_item(params)
-      new_record = association_proxy.build(params)
-      new_record.send("#{primary_key_name.sub(/_id$/, '')}=", base_record) # FIXME: This won't work with custom primary keys
+    def update_record(parameters)
+      record = find(parameters[:id].to_i)
       
-      if original_record?(new_record)
-        # Use the record that already exists, rather than the new one We do
-        # the deletion using eql? because == might delete the existing one
-        association_proxy.delete_if { |record| record.equal?(new_record) }
-        updated_record = find_original(new_record)
-        updated_record.attributes = params
-        
-        updated_records << updated_record
-      else
-        new_records << new_record
+      unless record.nil?
+        record.attributes = parameters
+        updated_records << record
+      end
+    end
+    
+    # Parameters are considered 'null' if the key (optionally) specified by the :require option
+    # is blank
+    def remove_null_parameters
+      if has_key_requirement?
+        parameters.delete_if do |record_parameters|
+          record_parameters[required_key].blank?
+        end
       end
     end
 end

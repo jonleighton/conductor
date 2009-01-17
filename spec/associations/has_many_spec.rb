@@ -1,142 +1,132 @@
 require File.dirname(__FILE__) + '/../spec_helper'
-require 'ostruct'
-
-class DummyActiveRecord < OpenStruct
-  def attributes=(params)
-    params.each_pair do |key, value|
-      send("#{key}=", value)
-    end
-  end
-end
-
-class DummyAssociationProxy < Array
-  def build(params = {})
-    DummyActiveRecord.new(params)
-  end
-  
-  def delete(*items)
-    items.each { |item| super(item) }
-  end
-end
-
-def stub_association(name, base_record_name = :idontfuckingcare, association_records = [], options = {})
-  @association_proxy = DummyAssociationProxy.new(association_records)
-  @base_record = stub_everything(name => @association_proxy, :class => stub_everything)
-  @reflection = stub_everything(:primary_key_name => base_record_name.to_s.singularize.foreign_key)
-  @base_record.class.stubs(:reflect_on_association).with(name).returns(@reflection)
-  @conductor = stub_everything(:base_record => @base_record)
-  Conductor::Associations::HasMany.new(@conductor, name, options)
-end
 
 module Conductor::Associations
-  describe HasMany, "when initialized and given some parameters to parse, with a name of 'tables', with the option :require => :table_id" do
+  describe HasMany, "with a name of 'ducks': " do
     before do
-      @association = stub_association(:tables, :house, [stub, stub], :require => :table_id)
-      @association.parse(1 => { "foo" => :bar, "table_id" => 4 }, 2 => { "hoo" => :haa }, 3 => { "bla" => :yar, "table_id" => 91 }, 4 => { "table_id" => "0" })
+      @association_proxy = DummyAssociationProxy.new
+      @base_record = stub_everything(:ducks => @association_proxy)
+      @conductor = stub_everything(:record => @base_record)
+      @association = Conductor::Associations::HasMany.new(@conductor, :ducks)
     end
     
-    it "should have an array of hashes with stringified keys as the params, and items without the id attribute deleted" do
-      @association.params.should == [{"foo" => :bar, "table_id" => 4}, { "bla" => :yar, "table_id" => 91 }]
-    end
-    
-    it "should allow the conductor to be accessed as an attribute" do
-      @association.conductor.should == @conductor
-    end
-    
-    it "should store the original records as a clone of the association proxy's array" do
-      original = @base_record.tables.clone
-      @base_record.tables << "lll"
-      @association.original_records.should == original
-    end
-    
-    it "should allow the base_record to be accessed as an attribute" do
-      @association.base_record.should == @base_record
-    end
-    
-    it "should have a name of 'tables'" do
-      @association.name.should == "tables"
-    end
-    
-    it "should return the reflection from the base_record's class of the 'tables' association, when asked for the reflection" do
-      @association.reflection.should == @reflection
-    end
-    
-    it "should set, on all records where it is nil, the primary_key_name specified by the reflection to the base_record's id, " +
-       "when asked to set the foreign keys" do
-      @association.stubs(:records).returns(records = [stub(:house_id => 60), stub(:house_id => nil), stub(:house_id => nil)])
-      @base_record.stubs(:id).returns(60)
-      records[1].expects(:house_id=).with(60)
-      records[2].expects(:house_id=).with(60)
-      @association.set_foreign_keys
-    end
-  end
-  
-  describe HasMany, "when initialized and given some params to parse which update 1 item, delete 2 and add 1, " + 
-                    "with a name of 'memberships', and the option 'require' => :membership_id" do
-    before do
-      @existing_records = [
-        OpenStruct.new("membership_id" => 6), # To be deleted
-        OpenStruct.new("membership_id" => 2), # To be updated
-        OpenStruct.new("membership_id" => 9)  # To be deleted
-      ]
-      @association = stub_association(:memberships, :club, @existing_records, 'require' => :membership_id)
-      @existing_records.each { |r| r.club = @base_record }
-      
-      @association.parse(
-        1 => { "membership_id" => 2 }, # Updated
-        2 => { "membership_id" => 7 }  # Added
-      )
-    end
-    
-    it "should have a list of deleted records" do
-      @association.deleted_records.should == [@association_proxy[0], @association_proxy[2]]
-    end
-    
-    it "should have a list of updated records, containing exactly the same objects from the original list of records" do
-      @association.updated_records.should have(1).item
-      @association.updated_records[0].should equal(@association_proxy[1])
-    end
-    
-    it "should have a list of new records containing objects build from the params" do
-      @association.new_records.should have(1).item
-      @association.new_records[0].membership_id.should == 7
-    end
-    
-    it "should assign the association to the base_record on each of the new records" do
-      @association.new_records[0].club.should == @base_record
-    end
-    
-    it "should have a list of records equal to the updated records plus the new records" do
-      @association.records.should == @association.updated_records + @association.new_records
-    end
-    
-    it "should delete all the deleted records when asked to save!" do
-      @base_record.memberships.expects(:delete).with(@association_proxy[0], @association_proxy[2])
-      @association.save!
-    end
-    
-    it "should save! all the records when asked to save!" do
-      @association.records.each { |record| record.expects(:save!) }
-      @association.save!
-    end
-    
-    it "should be changed" do
-      @association.should be_changed
-    end
-  end
-  
-  describe HasMany, "when initialized but not having parsed any params" do
-    before do
-      @association = stub_association(:chairs)
+    describe "#base_record" do
+      it "should return the conductor's record" do
+        @association.base_record.should == @conductor.record
+      end
     end
     
     it "should not be changed" do
-      @association.should_not be_changed
+      @conductor.should_not be_changed
     end
     
-    it "should return the association proxy converted to an array when asked for the records" do
-      @association.records.should == @association_proxy
-      @association.records.should be_instance_of(Array)
+    describe "#reflection" do
+      it "should return the base record's reflection for 'ducks'" do
+        @base_record.stubs(:class).returns(stub_everything)
+        @base_record.class.stubs(:reflect_on_association).with(:ducks).returns(reflection = stub)
+        
+        @association.reflection.should == reflection
+      end
+    end
+    
+    it "should be named 'ducks'" do
+      @association.name.should == "ducks"
+    end
+    
+    it "should return the base record's association proxy" do
+      @association.proxy.should == @association_proxy
+    end
+    
+    it "should store a copy of the original association proxy array" do
+      original = @association_proxy.to_a
+      @association_proxy << "lll"
+      @association.original_records.should == original
+    end
+    
+    it "should have an empty list of new records" do
+      @association.new_records.should be_empty
+    end
+    
+    it "should have an empty list of updated records" do
+      @association.updated_records.should be_empty
+    end
+    
+    it "should have an empty list of deleted records" do
+      @association.deleted_records.should be_empty
+    end
+  end
+  
+  describe HasMany, "with a name of 'tables': " do
+    before do
+      @association = Conductor::Associations::HasMany.new(stub_everything, :tables)
+      
+      @reflection = stub_everything(:primary_key_name => 'table_id')
+      @association.stubs(:reflection).returns(@reflection)
+      
+      @association_proxy = DummyAssociationProxy.new
+      @association.stubs(:proxy).returns(@association_proxy)
+    end
+    
+    describe "when given a hash of parameters to parse" do
+      before do
+        @association.parse(0 => { :id => 3 }, 1 => { :id => 8 })
+      end
+      
+      it "should extract an array from the parameters" do
+        @association.parameters.should == [{ :id => 3 }, { :id => 8 }]
+      end
+    end
+    
+    describe "when given parameters which require 1 addition, the deletion of records with id 6 and 9, " +
+             "and the updating of the record with id 2" do
+      before do
+        @original_records = [
+          DummyActiveRecord.new(:id => 6),                      # To be deleted
+          DummyActiveRecord.new(:id => 2, "colour" => "green"), # To be updated
+          DummyActiveRecord.new(:id => 9)                       # To be deleted
+        ]
+        @association.stubs(:original_records).returns(@original_records)
+        @association.parse(
+          1 => { "id" => "2", "colour" => "red" }, # Existing record
+          2 => { "colour" => "orange" }            # New record
+        )
+      end
+      
+      it "should have 1 new record with the specified attributes" do
+        @association.new_records.length.should == 1
+        @association.new_records[0].colour.should == "orange"
+      end
+      
+      it "should have updated the record with an id of 2 with the specified attributes" do
+        @association.updated_records.length.should == 1
+        @association.updated_records[0].should equal(@original_records[1])
+        @association.updated_records[0].colour.should == "red"
+      end
+      
+      it "should list the records with ids 6 and 9 as deleted" do
+        @association.deleted_records.length.should == 2
+        @association.deleted_records[0].should equal(@original_records[0])
+        @association.deleted_records[1].should equal(@original_records[2])
+      end
+      
+      it "should update the list of records to reflect the changes" do
+        @association.records.should == @association.updated_records + @association.new_records
+      end
+      
+      describe "#save!" do
+        it "should delete all the deleted records from the association proxy" do
+          @association_proxy.expects(:delete).with(*@association.deleted_records)
+          @association.save!
+        end
+        
+        it "should save! all the individual records" do
+          @association.records.each { |record| record.expects(:save!) }
+          @association.save!
+        end
+      end
+      
+      it "should be changed" do
+        @association.should be_changed
+      end
     end
   end
 end

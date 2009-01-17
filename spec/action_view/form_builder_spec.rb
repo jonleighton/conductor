@@ -1,5 +1,4 @@
-require File.dirname(__FILE__) + "/../spec_helper"
-require 'ostruct'
+require File.dirname(__FILE__) + "/spec_helper"
 
 module Conductor::ActionView
   describe FormBuilder, "for a book conductor" do
