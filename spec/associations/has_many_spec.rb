@@ -138,7 +138,7 @@ module Conductor::Associations
     end
   end
   
-  describe HasMany, "with some records" do
+  describe HasMany, "with some records: " do
     before do
       @association = Conductor::Associations::HasMany.new(stub_everything, :foo)
       @association.stubs(:records).returns([stub(:id => 4), stub(:id => 9), stub(:id => 1)])
@@ -150,6 +150,16 @@ module Conductor::Associations
     
     it "should not find a record when given an id that does not exist" do
       @association.find(3).should == nil
+    end
+    
+    describe "#set_foreign_keys" do
+      it "should set the foreign key to the base record for each of the records" do
+        @association.stubs(:primary_key_name).returns(:spaceship_id)
+        @association.stubs(:base_record).returns(stub(:id => 63))
+        
+        @association.records.each { |record| record.expects(:spaceship_id=).with(63) }
+        @association.set_foreign_keys
+      end
     end
   end
   

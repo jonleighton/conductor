@@ -84,12 +84,10 @@ class Conductor::Associations::HasMany
   end
   
   # Called from Conductor::Base#save! This is necessary because when the base_record is a new record
-  # the foreign key won't be automatically assigned in update_item.
+  # the foreign key won't be automatically assigned in build_record.
   def set_foreign_keys
     records.each do |record|
-      if record.send(primary_key_name).nil?
-        record.send("#{primary_key_name}=", base_record.id)
-      end
+      record.send("#{primary_key_name}=", base_record.id)
     end
   end
   
