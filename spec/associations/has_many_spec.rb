@@ -129,4 +129,19 @@ module Conductor::Associations
       end
     end
   end
+  
+  describe HasMany, "with some records" do
+    before do
+      @association = Conductor::Associations::HasMany.new(stub_everything, :foo)
+      @association.stubs(:records).returns([stub(:id => 4), stub(:id => 9), stub(:id => 1)])
+    end
+    
+    it "should find a record when given an id that exists" do
+      @association.find(1).should == @association.records[2]
+    end
+    
+    it "should not find a record when given an id that does not exist" do
+      @association.find(3).should == nil
+    end
+  end
 end
