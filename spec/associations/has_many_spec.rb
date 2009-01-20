@@ -53,6 +53,14 @@ module Conductor::Associations
     it "should have an empty list of deleted records" do
       @association.deleted_records.should be_empty
     end
+    
+    it "should have a nil required key" do
+      @association.required_key.should == nil
+    end
+    
+    it "should not have a key requirement" do
+      @association.should_not have_key_requirement
+    end
   end
   
   describe HasMany, "with a name of 'tables': " do
@@ -142,6 +150,27 @@ module Conductor::Associations
     
     it "should not find a record when given an id that does not exist" do
       @association.find(3).should == nil
+    end
+  end
+  
+  describe HasMany, "with a name of 'authorships', requiring an author_id key in the params: " do
+    before do
+      @association = Conductor::Associations::HasMany.new(stub_everything, :authorships, :require => :author_id)
+    end
+    
+    it "should have a required key of :author_id" do
+      @association.required_key.should == :author_id
+    end
+    
+    it "should have a key requirement" do
+      @association.should have_key_requirement
+    end
+    
+    describe "#parse" do
+      it "should ignore parameters which don't satisfy the key requirement" do
+        @association.parse(0 => { :id => 3, :author_id => 5 }, 1 => { :id => 2 })
+        @association.parameters.should == [{ :id => 3, :author_id => 5 }]
+      end
     end
   end
 end

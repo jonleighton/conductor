@@ -75,12 +75,10 @@ class Conductor::Associations::HasMany
     records.find { |record| record.id == id }
   end
   
-  # TODO: Individual test
   def required_key
-    options[:require] && options[:require].to_s
+    options[:require] && options[:require].to_sym
   end
   
-  # TODO: Individual test
   def has_key_requirement?
     !required_key.nil?
   end
