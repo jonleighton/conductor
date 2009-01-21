@@ -1,2 +1,2 @@
-$: << File.dirname(__FILE__) + "/lib" << File.dirname(__FILE__) + "/vendor"
+$: << File.dirname(__FILE__) + "/lib"
 require "conductor"

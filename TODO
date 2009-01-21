@@ -1,7 +1,6 @@
 For a 0.1 version:
 
 * Implement the ideas in the "wishlist" branch
-* Get rid of vendor/active_support/callbacks and use Rails' version instead
 * Do a bit of a code review, see if the tests could be made any simpler
 * Make loads and loads of comments throughout the code, particular in the example app
 * Write a good, simple tutorial
