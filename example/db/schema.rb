@@ -9,7 +9,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20080902100811) do
+ActiveRecord::Schema.define(:version => 20090121164328) do
 
   create_table "authors", :force => true do |t|
     t.string "name", :null => false
@@ -26,13 +26,17 @@ ActiveRecord::Schema.define(:version => 20080902100811) do
     t.integer "publisher_id", :null => false
   end
 
+  create_table "books_tags", :id => false, :force => true do |t|
+    t.integer "book_id"
+    t.integer "tag_id"
+  end
+
   create_table "publishers", :force => true do |t|
     t.string "name", :null => false
   end
 
-  add_foreign_key "authorships", ["book_id"], "books", ["id"], :deferrable => true, :name => "authorships_book_id_fkey"
-  add_foreign_key "authorships", ["author_id"], "authors", ["id"], :name => "authorships_author_id_fkey"
-
-  add_foreign_key "books", ["publisher_id"], "publishers", ["id"], :name => "books_publisher_id_fkey"
+  create_table "tags", :force => true do |t|
+    t.string "name", :null => false
+  end
 
 end
