@@ -24,13 +24,25 @@ class Conductor::Associations::HasMany
     @reflection ||= base_record.class.reflect_on_association(name.to_sym)
   end
   
+  def records_changed?
+    @records_changed == true
+  end
+  
+  def ids_changed?
+    @ids_changed == true
+  end
+  
   def changed?
-    @changed == true
+    records_changed? || ids_changed?
   end
   
   def save!
-    proxy.delete(*deleted_records)
-    records.each(&:save!)
+    if records_changed?
+      proxy.delete(*deleted_records)
+      records.each(&:save!)
+    elsif ids_changed?
+      base_record.send("#{ids_name}=", ids)
+    end
   end
   
   def parse(parameters)
@@ -47,12 +59,12 @@ class Conductor::Associations::HasMany
       end
     end
     
-    @changed = true
+    @records_changed = true
     @parameters
   end
   
   def records
-    if changed?
+    if records_changed?
       updated_records + new_records
     else
       original_records
@@ -71,6 +83,19 @@ class Conductor::Associations::HasMany
     original_records.reject { |record| records.include?(record) }
   end
   
+  def ids=(new_ids)
+    @ids_changed = true
+    @ids = new_ids
+  end
+  
+  def ids
+    if ids_changed?
+      @ids
+    else
+      original_records.map(&:id)
+    end
+  end
+  
   def find(id)
     records.find { |record| record.id == id }
   end
@@ -86,8 +111,10 @@ class Conductor::Associations::HasMany
   # Called from Conductor::Base#save! This is necessary because when the base_record is a new record
   # the foreign key won't be automatically assigned in build_record.
   def set_foreign_keys
-    records.each do |record|
-      record.send("#{primary_key_name}=", base_record.id)
+    if records_changed?
+      records.each do |record|
+        record.send("#{primary_key_name}=", base_record.id)
+      end
     end
   end
   
@@ -116,5 +143,9 @@ class Conductor::Associations::HasMany
           record_parameters[required_key].blank?
         end
       end
+    end
+    
+    def ids_name
+      "#{name.singularize}_ids"
     end
 end
