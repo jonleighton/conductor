@@ -27,13 +27,32 @@ module Conductor::ActionView
         
         @helper.stubs(:form_tag).with("/jump/to/the/left", {}).returns(form_tag = stub)
         
+        fields = stub_everything
         form_seq = sequence("form")
+        
         @helper.expects(:concat).with(form_tag, anything).in_sequence(form_seq)
-        @helper.expects(:fields_for).with("time_warp", @conductor, :hands_on_hips, :knees_in_tight, fields_for_options).in_sequence(form_seq)
+        
+        @helper.expects(:fields_for).with(
+          "time_warp", @conductor,
+          :hands_on_hips, :knees_in_tight,
+          fields_for_options
+        ).yields(fields).in_sequence(form_seq)
+        
+        # See below, the block calls this method to indicate it is actually used. Oh for a better
+        # solution...
+        fields.expects(:block_called).in_sequence(form_seq)
+        
+        fields.stubs(:string_for_end).returns(string_for_end = stub)
+        @helper.expects(:concat).with(string_for_end, anything).in_sequence(form_seq)
+        
         @helper.expects(:concat).with("</form>", anything).in_sequence(form_seq)
         
-        @helper.form_for_conductor(@conductor, :hands_on_hips, :knees_in_tight, original_options) { }
+        @helper.form_for_conductor(@conductor, :hands_on_hips, :knees_in_tight, original_options) do
+          fields.block_called
+        end
       end
+      
+      
     end
   end
 end

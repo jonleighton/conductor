@@ -24,4 +24,30 @@ module Conductor::ActionView
       end
     end
   end
+  
+  describe CollectionFormBuilder, "when the id field has not been called, but another field has: " do
+    before do
+      @builder = CollectionFormBuilder.new(stub_everything, stub_everything, stub_everything, {}, stub_everything)
+      @builder.text_field :foo
+    end
+    
+    describe "#id_field_called? " do
+      it "should be false" do
+        @builder.id_field_called?.should == false
+      end
+    end
+  end
+  
+  describe CollectionFormBuilder, "when the id field has been called: " do
+    before do
+      @builder = CollectionFormBuilder.new(stub_everything, stub_everything, stub_everything, {}, stub_everything)
+      @builder.check_box :id
+    end
+    
+    describe "#id_field_called? " do
+      it "should be true" do
+        @builder.id_field_called?.should == true
+      end
+    end
+  end
 end
