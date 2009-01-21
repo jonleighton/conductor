@@ -1,8 +1,10 @@
 class Conductor::ActionView::CollectionFormBuilder < ActionView::Helpers::FormBuilder
   # An inclusion check box is checked if and only if the current record is contained in the collection
-  def inclusion_check_box(name, options = {}, checked_value = "1", unchecked_value = "0")
+  def inclusion_check_box(method, options = {}, checked_value = nil, unchecked_value = "")
     options.reverse_merge!(:checked => collection.include?(object))
-    check_box(name, options, checked_value, unchecked_value)
+    checked_value ||= object.send(method)
+    
+    check_box(method, options, checked_value, unchecked_value)
   end
   
   # Has the id field for the current record in the collection been called at all? Used to decide
