@@ -1,9 +1,9 @@
-require File.dirname(__FILE__) + "/../spec_helper"
+require File.dirname(__FILE__) + "/spec_helper"
 
 describe Conductor::ConductorInvalid, "when initialized with a conductor" do
   before do
-    @resource = stub_everything
-    @conductor = stub_everything(:resource => @resource)
+    @record = stub_everything
+    @conductor = stub_everything(:record => @record)
     @exception = Conductor::ConductorInvalid.new(@conductor)
   end
   
@@ -11,7 +11,7 @@ describe Conductor::ConductorInvalid, "when initialized with a conductor" do
     @exception.conductor.should == @conductor
   end
   
-  it "should return the conductor's resource when asked for the record" do
-    @exception.record.should == @resource
+  it "should return the conductor's record when asked for the record" do
+    @exception.record.should == @record
   end
 end

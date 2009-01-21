@@ -7,7 +7,7 @@ class BooksController < ApplicationController
   end
   
   def create
-    if @book_conductor.update_attributes(params[:book_conductor])
+    if @book_conductor.update_attributes(params[:book])
       redirect_to books_path
     else
       render :action => "new"
@@ -15,7 +15,7 @@ class BooksController < ApplicationController
   end
   
   def update
-    if @book_conductor.update_attributes(params[:book_conductor])
+    if @book_conductor.update_attributes(params[:book])
       redirect_to books_path
     else
       render :action => "edit"

@@ -1,5 +1,5 @@
 module Conductor
-  class ConductorInvalid < Exception
+  class ConductorInvalid < StandardError
     attr_accessor :conductor
     
     def initialize(conductor)
@@ -7,7 +7,7 @@ module Conductor
     end
     
     def record
-      conductor.resource
+      conductor.record
     end
   end
 end

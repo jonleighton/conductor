@@ -1,4 +1,4 @@
-<% form_for @book_conductor do |form| %>
+<% form_for_conductor @book_conductor do |form| %>
   <%= error_messages_for :book_conductor %>
   
   <p>
@@ -7,7 +7,7 @@
   </p>
   
   <p>
-    <%= form.label :publisher %> (Options are <%= Publisher.find(:all).map(&:name).to_sentence %>.)<br>
+    <%= form.label :publisher %> (Options are <%= @book.potential_publishers.to_sentence %>.)<br>
     <%= form.text_field :publisher %>
   </p>
   
@@ -19,20 +19,16 @@
       <th>Role</th>
     </tr>
     
-    <%- counter = 1 %>
-    <% @book_conductor.potential_authorships.each do |authorship| -%>
-      <% fields_for "book_conductor[authorships][#{counter}]", authorship do |fields| -%>
-        <tr>
-          <td>
-            <%= fields.check_box :author_id, { :checked => @book_conductor.authorships.include?(authorship) }, authorship.author_id %>
-            <%= authorship.author.name %></td>
-          </td>
-          <td>
-            <%= fields.text_field :role %>
-          </td>
-        </tr>
-      <% end -%>
-      <%- counter += 1 -%>
+    <% form.fields_for_collection(:authorships, @book.potential_authorships) do |fields, authorship| -%>
+      <tr>
+        <td>
+          <%= fields.inclusion_check_box :author_id %>
+          <%= fields.label :author_id, authorship.author_name %>
+        </td>
+        <td>
+          <%= fields.text_field :role %>
+        </td>
+      </tr>
     <% end -%>
   </table>
   

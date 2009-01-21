@@ -1,12 +1,12 @@
 class BookConductor < Conductor::Base
-  conduct :authorships, :require_attribute => :author_id
+  has_many :authorships, :require => :author_id
   
   def publisher=(publisher_name)
-    @publisher = publisher_name
-    resource.publisher = Publisher.find_by_name(@publisher)
+    record.publisher = Publisher.find_by_name(publisher_name)
+    @publisher = record.publisher || publisher_name
   end
   
   def publisher
-    @publisher || (resource.publisher && resource.publisher.name)
+    @publisher || record.publisher
   end
 end

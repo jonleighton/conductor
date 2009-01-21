@@ -3,7 +3,7 @@ class Book < ActiveRecord::Base
   
   has_many :authorships, :dependent => :destroy
   has_many :authors, :through => :authorships
-
+  
   validates_presence_of :name
   validates_presence_of :publisher_id, :message => "must exist"
   
@@ -13,5 +13,13 @@ class Book < ActiveRecord::Base
   
   def potential_authorships
     authorships.from_authors(*potential_authors)
+  end
+  
+  def potential_publishers
+    Publisher.find(:all)
+  end
+  
+  def publisher_name
+    publisher.name
   end
 end

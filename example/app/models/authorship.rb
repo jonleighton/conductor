@@ -16,6 +16,10 @@ class Authorship < ActiveRecord::Base
     other.book_id == book_id && other.author_id == author_id
   end
   
+  def author_name
+    author.name
+  end
+  
   private
   
     def validate_presence_of_role
