@@ -32,5 +32,16 @@
     <% end -%>
   </table>
   
+  <h3>Tags</h3>
+  
+  <ul>
+    <% @book.potential_tags.each do |tag| -%>
+      <li>
+        <%= check_box_tag "book[tag_ids][]", tag.id, @book.tags.include?(tag), :id => "book_tag_ids_#{tag.id}" %>
+        <%= label_tag "book_tag_ids_#{tag.id}", tag -%>
+      </li>
+    <% end -%>
+  </ul>
+  
   <p><%= form.submit %></p>
 <% end %>
