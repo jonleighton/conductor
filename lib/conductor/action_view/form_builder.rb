@@ -27,4 +27,13 @@ class Conductor::ActionView::FormBuilder < ActionView::Helpers::FormBuilder
   def string_for_end
     "<div style='margin:0;padding:0'>#{hidden_fields_for_end.join}</div>"
   end
+  
+  def fields_for_collection_ids(collection_ids_name, records)
+    raise ArgumentError, "No block given" unless block_given?
+    
+    records.each do |record|
+      fields = Conductor::ActionView::CollectionIdsFormBuilder.new(self, collection_ids_name, record)
+      yield fields, record
+    end
+  end
 end
