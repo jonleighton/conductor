@@ -4,30 +4,27 @@ class Conductor::ActionView::CollectionIdsFormBuilder
   
   attr_reader :parent, :name, :object
   
+  delegate :id, :to => :object
+  delegate :object, :object_name, :to => :parent, :prefix => true
+  
   def initialize(parent, name, object)
-    @parent, @name, @object = parent, name, object
+    @parent, @name, @object = parent, name.to_s, object
   end
   
-  %w(check_box hidden_field text_area text_field).each do |helper|
-    class_eval <<-SRC
-      def #{helper}(*args)
-        #{helper}_tag(field_name, id, *args)
-      end
-    SRC
+  def check_box(checked = false, options = {})
+    options.reverse_merge!(:id => field_id)
+    check_box_tag(field_name, id, checked, options)
+  end
+  
+  def inclusion_check_box(options = {})
+    check_box(parent_object.send(name).include?(id), options)
   end
   
   def label(text = nil, options = {})
     label_tag(field_id, text || object, options)
   end
   
-  def inclusion_check_box(options = {})
-    check_box_tag(field_name, id, parent_object.send(name).include?(id), :id => field_id)
-  end
-  
   private
-  
-    delegate :id, :to => :object
-    delegate :object, :object_name, :to => :parent, :prefix => true
     
     def field_name
       "#{parent_object_name}[#{name}][]"
