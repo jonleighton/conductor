@@ -99,7 +99,7 @@ module Conductor::Associations
     
     describe "when the ids are assigned to: " do
       before do
-        @association.ids = [5, 6, 2]
+        @association.ids = ["5", "6", "2"]
       end
       
       it "should be changed" do

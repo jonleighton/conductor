@@ -85,7 +85,7 @@ class Conductor::Associations::HasMany
   
   def ids=(new_ids)
     @ids_changed = true
-    @ids = new_ids
+    @ids = new_ids.map(&:to_i)
   end
   
   def ids
