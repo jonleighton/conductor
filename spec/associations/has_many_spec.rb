@@ -19,6 +19,14 @@ module Conductor::Associations
       @conductor.should_not be_changed
     end
     
+    it "should not be records changed" do
+      @conductor.should_not be_records_changed
+    end
+    
+    it "should not be ids changed" do
+      @conductor.should_not be_ids_changed
+    end
+    
     describe "#reflection" do
       it "should return the base record's reflection for 'ducks'" do
         @base_record.stubs(:class).returns(stub_everything)
@@ -40,6 +48,11 @@ module Conductor::Associations
       original = @association_proxy.to_a
       @association_proxy << "lll"
       @association.original_records.should == original
+    end
+    
+    it "should return the ids of the original records" do
+      @association.stubs(:original_records).returns([stub(:id => 3), stub(:id => 7)])
+      @association.ids.should == [3, 7]
     end
     
     it "should have an empty list of new records" do
@@ -81,6 +94,38 @@ module Conductor::Associations
       
       it "should extract an array from the parameters" do
         @association.parameters.should == [{ :id => 3 }, { :id => 8 }]
+      end
+    end
+    
+    describe "when the ids are assigned to: " do
+      before do
+        @association.ids = ["5", "6", "2"]
+      end
+      
+      it "should be changed" do
+        @association.should be_changed
+      end
+      
+      it "should not be records changed" do
+        @association.should_not be_records_changed
+      end
+      
+      it "should be ids changed" do
+        @association.should be_ids_changed
+      end
+      
+      it "should return the new ids" do
+        @association.ids.should == [5, 6, 2]
+      end
+      
+      describe "#save!" do
+        it "should set the ids to the table_ids attribute on the base record" do
+          @base_record = stub_everything
+          @association.stubs(:base_record).returns(@base_record)
+          @base_record.expects(:table_ids=).with(@association.ids)
+          
+          @association.save!
+        end
       end
     end
     
@@ -135,6 +180,14 @@ module Conductor::Associations
       it "should be changed" do
         @association.should be_changed
       end
+      
+      it "should be records changed" do
+        @association.should be_records_changed
+      end
+      
+      it "should not be ids changed" do
+        @association.should_not be_ids_changed
+      end
     end
   end
   
@@ -153,11 +206,19 @@ module Conductor::Associations
     end
     
     describe "#set_foreign_keys" do
-      it "should set the foreign key to the base record for each of the records" do
+      it "should set the foreign key to the base record for each of the records if the records have changed" do
         @association.stubs(:primary_key_name).returns(:spaceship_id)
         @association.stubs(:base_record).returns(stub(:id => 63))
+        @association.stubs(:records_changed?).returns(true)
         
         @association.records.each { |record| record.expects(:spaceship_id=).with(63) }
+        @association.set_foreign_keys
+      end
+      
+      it "should not do anything if the records have not changed" do
+        @association.stubs(:records_changed?).returns(false)
+        @association.records.each { |record| record.expects(:spaceship_id=).never }
+        
         @association.set_foreign_keys
       end
     end

@@ -1,5 +1,6 @@
 class BookConductor < Conductor::Base
   has_many :authorships, :require => :author_id
+  has_many :tags
   
   def publisher=(publisher_name)
     record.publisher = Publisher.find_by_name(publisher_name)

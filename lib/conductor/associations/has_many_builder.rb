@@ -6,8 +6,25 @@ class Conductor::Associations::HasMany::Builder
   end
   
   def build
-    build_getter
-    build_setter
+    builder  = self
+    
+    conductor_class.class_eval do
+      define_method(builder.getter_name) do
+        builder.instance.records
+      end
+      
+      define_method(builder.setter_name) do |params|
+        builder.instance.parse(params)
+      end
+      
+      define_method(builder.ids_getter_name) do
+        builder.instance.ids
+      end
+      
+      define_method(builder.ids_setter_name) do |ids|
+        builder.instance.ids = ids
+      end
+    end
   end
   
   def instantiate_instance(conductor)
@@ -17,26 +34,14 @@ class Conductor::Associations::HasMany::Builder
   alias_method :getter_name, :name
   
   def setter_name
-    "#{name}="
+    "#{getter_name}="
   end
   
-  private
+  def ids_getter_name
+    "#{name.singularize}_ids"
+  end
   
-    def build_getter
-      builder = self
-      conductor_class.class_eval do
-        define_method(builder.getter_name) do
-          builder.instance.records
-        end
-      end
-    end
-    
-    def build_setter
-      builder = self
-      conductor_class.class_eval do
-        define_method(builder.setter_name) do |params|
-          builder.instance.parse(params)
-        end
-      end
-    end
+  def ids_setter_name
+    "#{ids_getter_name}="
+  end
 end

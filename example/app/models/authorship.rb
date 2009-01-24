@@ -4,13 +4,7 @@ class Authorship < ActiveRecord::Base
   
   validate :validate_presence_of_role
   
-  def self.from_authors(*authors)
-    authors.map do |author|
-      new do |authorship|
-        authorship.author_id = author.id
-      end
-    end
-  end
+  buildable_from :authors
   
   def ==(other)
     other.book_id == book_id && other.author_id == author_id

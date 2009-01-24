@@ -17,6 +17,10 @@
     <p>None</p>
   <% end -%>
   
+  <h3>Tags</h3>
+  
+  <p><%= book.tags.to_sentence %></p>
+  
   <%= link_to "Edit", edit_book_path(book) %> |
   <%= link_to "Delete", book_path(book), :method => :delete %>
   <hr>

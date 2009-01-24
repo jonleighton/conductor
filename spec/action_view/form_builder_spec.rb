@@ -60,5 +60,28 @@ module Conductor::ActionView
         end
       end
     end
+    
+    describe "#fields_for_collection_ids" do
+      it "should raise an ArgumentError if no block is given" do
+        lambda { @builder.fields_for_collection_ids(:foo_ids, [stub, stub]) }.should raise_error(ArgumentError)
+      end
+      
+      it "should yield a Conductor::ActionView::CollectionIdsFormBuilder and the record, for each of the records" do
+        records = [stub, stub, stub]
+        builders = records.map do |record|
+          builder = stub
+          Conductor::ActionView::CollectionIdsFormBuilder.stubs(:new).with(@builder, :foo_ids, record).returns(builder)
+          builder
+        end
+        
+        counter = 0
+        @builder.fields_for_collection_ids(:foo_ids, records) do |fields, record|
+          fields.should == builders[counter]
+          record.should == records[counter]
+          counter += 1
+        end
+        counter.should == 3
+      end
+    end
   end
 end

@@ -19,10 +19,22 @@ module Conductor::Associations
       @conductor.tags.should == records
     end
     
-    it "should provide a #tags= method on the conductor, which parses the given params to the instance to be parsed" do
+    it "should provide a #tags= method on the conductor, which passes the given params to the instance to be parsed" do
       params = stub
       @instance.expects(:parse).with(params)
       @conductor.tags = params
+    end
+    
+    it "should provide a #tag_ids method on the conductor, which returns the instance's ids" do
+      ids = stub
+      @instance.stubs(:ids).returns(ids)
+      @conductor.tag_ids.should == ids
+    end
+    
+    it "should provide a #tag_ids= method on the conductor, which assigns the given ids on the instance" do
+      ids = stub
+      @instance.expects(:ids=).with(ids)
+      @conductor.tag_ids = ids
     end
   end
 end

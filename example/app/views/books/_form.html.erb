@@ -1,36 +1,51 @@
 <% form_for_conductor @book_conductor do |form| %>
   <%= error_messages_for :book_conductor %>
   
-  <p>
-    <%= form.label :name %><br>
-    <%= form.text_field :name %>
-  </p>
-  
-  <p>
-    <%= form.label :publisher %> (Options are <%= @book.potential_publishers.to_sentence %>.)<br>
-    <%= form.text_field :publisher %>
-  </p>
-  
-  <h3>Authors</h3>
-  
-  <table>
-    <tr>
-      <th>Name</th>
-      <th>Role</th>
-    </tr>
+  <fieldset>
+    <legend>Basic Details</legend>
     
-    <% form.fields_for_collection(:authorships, @book.potential_authorships) do |fields, authorship| -%>
+    <p>
+      <%= form.label :name %><br>
+      <%= form.text_field :name %>
+    </p>
+    
+    <p>
+      <%= form.label :publisher %> (Options are <%= @book.potential_publishers.to_sentence %>.)<br>
+      <%= form.text_field :publisher %>
+    </p>
+  </fieldset>
+  
+  <fieldset>
+    <legend>Authors</legend>
+  
+    <table>
       <tr>
-        <td>
-          <%= fields.inclusion_check_box :author_id %>
-          <%= fields.label :author_id, authorship.author_name %>
-        </td>
-        <td>
-          <%= fields.text_field :role %>
-        </td>
+        <th>Name</th>
+        <th>Role</th>
       </tr>
+      
+      <% form.fields_for_collection(:authorships, @book.potential_authorships) do |fields, authorship| -%>
+        <tr>
+          <td>
+            <%= fields.inclusion_check_box :author_id %>
+            <%= fields.label :author_id, authorship.author_name %>
+          </td>
+          <td>
+            <%= fields.text_field :role %>
+          </td>
+        </tr>
+      <% end -%>
+    </table>
+  </fieldset>
+  
+  <fieldset>
+    <legend>Tags</legend>
+    
+    <% form.fields_for_collection_ids(:tag_ids, @book.potential_tags) do |fields, tag| -%>
+      <%= fields.inclusion_check_box %>
+      <%= fields.label -%>
     <% end -%>
-  </table>
+  </fieldset>
   
   <p><%= form.submit %></p>
 <% end %>
