@@ -9,6 +9,9 @@ class Book < ActiveRecord::Base
   validates_presence_of :name
   validates_presence_of :publisher_id, :message => "must exist"
   
+  # Here we're finding all the authors and creating a load of Authorship instances which are linked
+  # to those authors. This creates an array of all the authorships we might want to associate our
+  # book with.
   def potential_authorships
     authorships.build_from_authors(*Author.find(:all))
   end
