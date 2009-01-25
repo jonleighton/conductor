@@ -11,8 +11,7 @@ module Conductor::ActionView
     
     describe "#form_for_conductor" do
       before do
-        @conductor = stub_everything(:record => stub_everything)
-        ActionController::RecordIdentifier.stubs(:singular_class_name).with(@conductor.record).returns("time_warp")
+        @conductor = stub_everything(:record_name => "time_warp")
       end
     
       it "should raise an ArgumentError if there is no block" do
@@ -52,7 +51,21 @@ module Conductor::ActionView
         end
       end
       
-      
+      describe "#error_messages_for_conductor" do
+        before do
+          conductor = stub_everything(:record_name => "carrot")
+          @helper.instance_eval do
+            @carrot_conductor = conductor
+          end
+        end
+        
+        it "should call error_messages_for with the conductor, but using the conductor's record name as the object name" do
+          errors = stub
+          @helper.stubs(:error_messages_for).with(:carrot_conductor, :object_name => "carrot").returns(errors)
+          
+          @helper.error_messages_for_conductor(:carrot_conductor).should == errors
+        end
+      end
     end
   end
 end

@@ -32,6 +32,8 @@ class Conductor::Base
       end
   end
   
+  extend ActiveSupport::Memoizable
+  
   attr_reader :record, :associations
   
   delegate :id, :to => :record
@@ -113,17 +115,26 @@ class Conductor::Base
   # Go through each of the records belonging to each of the updaters and
   # add their errors to the base errors object
   def errors
-    unless @errors
-      @errors = record.errors.dup
-      associations.each do |association|
-        association.records.each do |record|
-          record.errors.each_full do |message|
-            @errors.add_to_base message
-          end
+    errors = record.errors.dup
+    association_records.each do |record|
+      record.errors.each do |attribute, message|
+        if attribute == "base"
+          errors.add_to_base("#{record}: #{message}")
+        else
+          errors.add_to_base("The #{attribute} for #{record} #{message}")
         end
       end
     end
-    @errors
+    errors
+  end
+  memoize :errors
+  
+  def association_records
+    associations.map(&:records).flatten
+  end
+  
+  def record_name
+    ActionController::RecordIdentifier.singular_class_name(record)
   end
   
   def method_missing(method_name, *args)
