@@ -24,4 +24,8 @@ class Book < ActiveRecord::Base
   def publisher_name
     publisher.name
   end
+  
+  def author_names_and_roles
+    authorships.map { |authorship| "#{authorship.author_name} as #{authorship.role}" }
+  end
 end

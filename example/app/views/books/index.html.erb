@@ -2,26 +2,24 @@
 
 <p><%= link_to "New Book", new_book_path %></p>
 
-<% @books.each do |book| -%>
-  <h2><%=h book.name %></h2>
+<table class="books">
+  <tr class="odd">
+    <th>Name</th>
+    <th>Publisher</th>
+    <th>Authors</th>
+    <th>Tags</th>
+    <th></th>
+    <th></th>
+  </tr>
   
-  <h3>Authors:</h3>
-  
-  <% unless book.authorships.empty? -%>
-    <ul>
-      <% book.authorships.each do |authorship| -%>
-        <li><%=h authorship.author.name -%>, <%=h authorship.role -%></li>
-      <% end -%>
-    </ul>
-  <% else -%>
-    <p>None</p>
-  <% end -%>
-  
-  <h3>Tags</h3>
-  
-  <p><%= book.tags.to_sentence %></p>
-  
-  <%= link_to "Edit", edit_book_path(book) %> |
-  <%= link_to "Delete", book_path(book), :method => :delete %>
-  <hr>
-<% end %>
+  <% @books.each do |book| -%>
+    <tr class="<%= cycle('even', 'odd') %>">
+      <th><%=h book.name %></th>
+      <td><%=h book.publisher %></td>
+      <td><%=h book.author_names_and_roles.to_sentence %></td>
+      <td><%=h book.tags.to_sentence %></td>
+      <td><%= link_to "Edit", edit_book_path(book) %></td>
+      <td><%= link_to "Delete", book_path(book), :method => :delete %></td>
+    <tr>
+  <% end %>
+</table>

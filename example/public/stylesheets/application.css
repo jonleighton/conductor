@@ -1,0 +1,45 @@
+body {
+  margin: 30px;
+  font-family: helvetica, arial, sans-serif;
+  line-height: 1.3em;
+}
+
+p {
+  margin: 0 0 15px 0;
+}
+
+a, a:visited {
+  color: #306B37;
+  text-decoration: none;
+  border-bottom: 1px solid #5AC969;
+  padding: 0 2px;
+}
+a:hover, a:active {
+  border-color: #306B37;
+  background: #E9FFD7;
+}
+
+table {
+  border-collapse: collapse;
+}
+table.books {
+  width: 100%;
+}
+tr.odd {
+  background: #eee;
+}
+th, td {
+  padding: 3px;
+  border: 1px solid #ccc;
+}
+
+fieldset {
+  border: 0;
+  border-bottom: 1px solid #ccc;
+  margin: 0 0 20px 0;
+}
+legend {
+  font-weight: bold;
+  font-size: 16px;
+  margin: 0 0 10px 0;
+}
