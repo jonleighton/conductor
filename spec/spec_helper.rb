@@ -28,3 +28,9 @@ class DummyAssociationProxy < Array
     items.each { |item| super(item) }
   end
 end
+
+# Fake it, as the real version isn't needed
+module ActionController
+  module RecordIdentifier
+  end
+end

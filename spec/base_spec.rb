@@ -106,6 +106,13 @@ describe Conductor::Base, "with a record, with a has_many :memberships associati
       exception.conductor.should == @conductor
     end
   end
+  
+  describe "#record_name" do
+    it "should return the singular class name of its record" do
+      ActionController::RecordIdentifier.stubs(:singular_class_name).with(@record).returns("foo")
+      @conductor.record_name.should == "foo"
+    end
+  end
 end
 
 describe Conductor::Base, "when all the associations and the record are able to save!" do
@@ -250,15 +257,16 @@ describe Conductor::Base, "with a record which responds to 'name' and 'age=', an
   end
 end
 
-describe Conductor::Base, "when the record has error, and one of the records in an association has an error" do
+describe Conductor::Base, "when the record has an error, and one of the records in an association has some errors" do
   before do
     @record = stub_everything
     @record.stubs(:errors).returns(ActiveRecord::Errors.new(@record))
     @record.errors.add_to_base "Foo is totally wrong!"
     
-    @error_record = stub_everything
+    @error_record = stub_everything(:to_s => "Ben")
     @error_record.stubs(:errors).returns(ActiveRecord::Errors.new(@error_record))
     @error_record.errors.add_to_base "You are so stupid man!"
+    @error_record.errors.add(:foo, "can't be blank")
     
     @ok_record = stub_everything(:errors => stub_everything(:each_full => []))
     @association = stub_everything(:records => [@ok_record.dup, @ok_record.dup, @error_record, @ok_record.dup])
@@ -269,8 +277,23 @@ describe Conductor::Base, "when the record has error, and one of the records in 
   
   it "should aggregate all the errors from the record and the records in the associations" do
     errors = @conductor.errors.full_messages
-    errors.length.should == 2
+    errors.length.should == 3
     errors.should include("Foo is totally wrong!")
-    errors.should include("You are so stupid man!")
+    errors.should include("Ben: You are so stupid man!")
+    errors.should include("The foo for Ben can't be blank")
+  end
+end
+
+describe Conductor::Base, "with some associations: " do
+  before do
+    @conductor = Conductor::Base.new(stub)
+    @records = [stub, stub, stub, stub, stub]
+    @conductor.stubs(:associations).returns([stub(:records => [@records[0], @records[1]]), stub(:records => [@records[2], @records[3], @records[4]])])
+  end
+  
+  describe "#association_records" do
+    it "should returns all the records of the associations" do
+      @conductor.association_records.should == @records
+    end
   end
 end
