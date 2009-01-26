@@ -65,9 +65,14 @@ class BookConductor < Conductor::Base
 end
 
 @book_conductor.authorships = {
-  0 => { :role => "" },                         # Record doesn't exist (no id field) and won't be created (no author_id field)
-  1 => { :id => 5, :role => "Lead Writer" },    # Record is currently associated, but will be removed (no author_id field)
-  2 => { :author_id => 34, :role => "Editor" }  # Record doesn't exist (no id field), but will be created and associated with the book
+  # Record doesn't exist (no id field) and won't be created (no author_id field)
+  0 => { :role => "" },
+  
+  # Record is currently associated, but will be removed (no author_id field)
+  1 => { :id => 5, :role => "Lead Writer" },
+  
+  # Record doesn't exist (no id field), but will be created and associated with the book
+  2 => { :author_id => 34, :role => "Editor" }
 }</code></pre>
 
 h2. Relationship with the Presenter pattern
