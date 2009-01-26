@@ -27,7 +27,7 @@ end</code></pre>
 
 h3. Automatically managing associations
 
-In it's simplest form, we can do the following:
+In its simplest form, we can do the following:
 
 <pre><code>class Book < ActiveRecord::Base
   has_many :tags
@@ -74,6 +74,13 @@ end
   # Record doesn't exist (no id field), but will be created and associated with the book
   2 => { :author_id => 34, :role => "Editor" }
 }</code></pre>
+
+h2. Known Problems
+
+Patches welcome!
+
+* Currently only works with PostgreSQL
+* The documentation sucks. I am rubbish at writing documentation, so it would be really great if some people could write tutorials/blog posts/etc...
 
 h2. Relationship with the Presenter pattern
 
