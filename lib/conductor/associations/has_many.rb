@@ -1,4 +1,4 @@
-class Conductor::Associations::HasMany
+class Conductor::Associations::HasMany # :nodoc:
   require "conductor/associations/has_many_builder"
   
   attr_reader :conductor, :name, :parameters, :original_records, :options

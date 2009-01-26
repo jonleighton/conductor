@@ -1,4 +1,7 @@
+# This module is mixed into +ActionView::Base+, and so these methods are available in your templates.
 module Conductor::ActionView::Helper
+  # Creates a form for a Conductor::Base object. Some additional methods (over an above the usual 
+  # form methods) are provided - these are documented in FormBuilder.
   def form_for_conductor(conductor, *args, &proc)
     raise ArgumentError, "Missing block" unless block_given?
     
@@ -14,6 +17,7 @@ module Conductor::ActionView::Helper
     concat('</form>')
   end
   
+  # Displays error messages for a Conductor::Base
   def error_messages_for_conductor(conductor_name, *args)
     conductor = instance_variable_get("@#{conductor_name}")
     

@@ -1,6 +1,6 @@
 require "action_view"
 
-module Conductor::ActionView
+module Conductor::ActionView # :nodoc:
   require "conductor/action_view/helper"
   require "conductor/action_view/form_builder"
   require "conductor/action_view/collection_form_builder"

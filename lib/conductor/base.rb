@@ -1,23 +1,34 @@
 require "active_support/callbacks"
 require "conductor/conductor_invalid"
 
-module Conductor::Associations
+module Conductor::Associations # :nodoc:
+  class HasMany # :nodoc:
+  end
   require "conductor/associations/has_many"
 end
 
 class Conductor::Base
   class << self
-    def associations
-      @associations ||= []
-    end
-    
+    # Declare that we would like to manage a one-to-many association. Example:
+    # 
+    #   class Person < ActiveRecord::Base
+    #     has_many :possessions
+    #   end
+    # 
+    #   class PersonConductor < Conductor::Base
+    #     has_many :possessions
+    #   end
     def has_many(name, options = {})
       association = Conductor::Associations::HasMany::Builder.new(self, name, options)
       association.build
       associations << association
     end
     
-    def method_missing(method_name, *args)
+    def associations # :nodoc:
+      @associations ||= []
+    end
+    
+    def method_missing(method_name, *args) # :nodoc:
       if record_class.respond_to?(method_name)
         record_class.send(method_name, *args)
       else
@@ -39,6 +50,7 @@ class Conductor::Base
   delegate :id, :to => :record
   delegate :connection, :to => "record.class"
   
+  # The record should be the ActiveRecord::Base instance that we are conducting.
   def initialize(record)
     @record = record
     @associations = self.class.associations.map { |association| association.instantiate_instance(self) }
@@ -47,20 +59,14 @@ class Conductor::Base
   include ActiveSupport::Callbacks
   define_callbacks :before_save, :after_save
   
-  # * Everything happens in a transaction so it can all be rolled back
-  #   if something fails.
-  # * In general, we save the updaters before the main record because the
-  #   main record may have validations relating to the associations conducted
-  #   by the updaters
-  # * If we are dealing with a new record, we prefetch an id from the database.
-  #   This allows the associations to be saved, with the correct foreign key,
-  #   before the main record has actually been created, which allows validations
-  #   to work which might not otherwise work. (For instance, if the main record
-  #   requires that at all times there is at least one record in a has_many 
-  #   association.)
-  # * If the associated records' table has a foreign key constraint, it should
-  #   be deferrable. It will be satisfied by the end of the transaction, but
-  #   not when the association is initially saved.
+  # Everything in the save happens in a transaction. All the associated records which we are managing
+  # are saved, and then the record itself is saved. If at any point a save fails then all changes
+  # are rolled back.
+  #
+  # A return value of true indicates success, and false indicates failure.
+  #
+  # Callbacks can be registered in the same way as on ActiveRecord::Base object. The available
+  # callbacks are +before_save+ and +after_save+. These also happen within the transaction.
   def save
     record.class.transaction do
       run_callbacks(:before_save)
@@ -86,12 +92,13 @@ class Conductor::Base
     false
   end
   
+  # Calls save, but raises a Conductor::ConductorInvalid if it fails
   def save!
     save || raise(Conductor::ConductorInvalid.new(self))
   end
   
-  # Iterate each of the attributes, if there is a setter defined on this updater
-  # for it then use that, then just mass assign the rest to the record
+  # Assigns the given hash of attributes to this conductor. Attributes which the conductor
+  # doesn't know how to deal with are passed to the underlying record.
   def attributes=(params)
     params = params.nil? ? {} : params.clone
     params.each do |attribute, value|
@@ -103,17 +110,19 @@ class Conductor::Base
     record.attributes = params
   end
   
+  # Assign the given attributes and then try to save
   def update_attributes(params)
     self.attributes = params
     save
   end
   
+  # Calls update_attributes but raises a Conductor::ConductorInvalid if it fails
   def update_attributes!(params)
     update_attributes(params) || raise(Conductor::ConductorInvalid.new(self))
   end
   
-  # Go through each of the records belonging to each of the updaters and
-  # add their errors to the base errors object
+  # An aggregation of all errors from the conducted record and all associated record which we
+  # are managing.
   def errors
     errors = record.errors.dup
     association_records.each do |record|
@@ -129,15 +138,15 @@ class Conductor::Base
   end
   memoize :errors
   
-  def association_records
+  def association_records # :nodoc:
     associations.map(&:records).flatten
   end
   
-  def record_name
+  def record_name # :nodoc:
     ActionController::RecordIdentifier.singular_class_name(record)
   end
   
-  def method_missing(method_name, *args)
+  def method_missing(method_name, *args) # :nodoc:
     if record.respond_to?(method_name)
       record.send(method_name, *args)
     else

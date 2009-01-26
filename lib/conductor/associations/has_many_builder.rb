@@ -1,4 +1,4 @@
-class Conductor::Associations::HasMany::Builder
+class Conductor::Associations::HasMany::Builder # :nodoc:
   attr_reader :conductor_class, :name, :options, :instance
   
   def initialize(conductor_class, name, options = {})

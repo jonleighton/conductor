@@ -1,4 +1,19 @@
+# This module is mixed into ActiveRecord::Base
 module Conductor::ActiveRecord::BuildableFrom
+  # This is most easily shown with an example:
+  #
+  #   class Membership < ActiveRecord::Base
+  #     buildable_from :members
+  #   end
+  # 
+  #   member = Person.find(:first)
+  #   member.id # => 622
+  # 
+  #   membership = Membership.build_from_member(member)
+  #   membership.member_id # => 622
+  # 
+  # Also, <tt>Membership.build_from_members(member1, member2, member3, ...)</tt> is provided which
+  # returns an array of memberships.
   def buildable_from(plural_association_name)
     plural_association_name = plural_association_name.to_s
     association_name        = plural_association_name.singularize
