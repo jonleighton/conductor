@@ -1,7 +1,6 @@
 For a 0.1 version:
 
-* Make loads and loads of comments throughout the code, particular in the example app
-* Write a good, simple tutorial
+* Rake task to setup app/conductors directory (should be made a load path too)
 * Make a screencast, based on the tutorial
 * Release a 0.1 version with a gem, rdoc and a straightforward web page
 * Try to promote the plugin a bit and get other developers interested
