@@ -1,3 +1,7 @@
+h2. Status
+
+This is now kind of obsoleted by the accepts_nested_attributes feature built into Active Record. (Though I do hate that they are putting logic for munging HTTP params in the model.)
+
 h1. Conductor Plugin
 
 Conductor is a "Rails":http://rubyonrails.org/ plugin which *helps you manage creating and updating a record and its associations via a single form submission*. More generally, it is an implementation of the "Unit of Work":http://martinfowler.com/eaaCatalog/unitOfWork.html design pattern.
